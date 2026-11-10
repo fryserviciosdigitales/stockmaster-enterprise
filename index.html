@@ -6,6 +6,7 @@
   <title>StockMaster Enterprise - SaaS Multiempresa</title>
   
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     :root {
@@ -56,7 +57,7 @@
 </head>
 <body>
 
-  <!-- PANTALLA DE LOGIN -->
+  <!-- LOGIN -->
   <div class="container" id="login-container">
     <div class="logo-area">
       <h1>StockMaster</h1>
@@ -66,23 +67,17 @@
     <div id="error-alert" class="error-msg"></div>
 
     <form id="login-form" onsubmit="ejecutarLogin(event)">
-      <div class="form-group">
-        <label>Correo Electrónico</label>
-        <input type="email" id="email" required placeholder="admin@inventario.com">
-      </div>
-      <div class="form-group">
-        <label>Contraseña</label>
-        <input type="password" id="password" required placeholder="••••••••">
-      </div>
+      <div class="form-group"><label>Correo Electrónico</label><input type="email" id="email" required placeholder="admin@inventario.com"></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="password" required placeholder="••••••••"></div>
       <button type="submit" class="btn">Iniciar Sesión</button>
     </form>
     <div style="margin-top: 1rem; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
-      Acceso Superadmin: <b>admin@inventario.com</b> / <b>123456</b><br>
-      Acceso Empresa Demo: <b>demo@ferreteria.com</b> / <b>123456</b>
+      Superadmin: <b>admin@inventario.com</b> / <b>123456</b><br>
+      Empresa Demo: <b>demo@ferreteria.com</b> / <b>123456</b>
     </div>
   </div>
 
-  <!-- PANEL PRINCIPAL -->
+  <!-- DASHBOARD -->
   <div id="dashboard-view" class="hidden">
     <div class="dash-header">
       <h2 id="empresa-titulo" style="font-size: 1.4rem;">StockMaster Enterprise</h2>
@@ -94,12 +89,12 @@
     
     <div class="dash-content">
       
-      <!-- VISTA SUPERADMIN -->
+      <!-- SUPERADMIN PANEL -->
       <div id="panel-superadmin" class="hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <div>
             <h3 style="font-size: 1.2rem; color: var(--text);">Empresas Clientes Suscritas al SaaS</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem;">Da de alta nuevas empresas y gestiona sus accesos de inventario.</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Gestión integral de compañías y accesos.</p>
           </div>
           <button onclick="abrirModalNuevaEmpresa()" class="btn" style="width: auto; background: var(--success);">+ Registrar Nueva Empresa</button>
         </div>
@@ -108,13 +103,7 @@
           <table>
             <thead>
               <tr>
-                <th>ID Empresa</th>
-                <th>Nombre del Negocio</th>
-                <th>Correo Administrador</th>
-                <th>Plan Contratado</th>
-                <th>Estado</th>
-                <th>Fecha Alta</th>
-                <th style="text-align: center;">Acciones</th>
+                <th>ID Empresa</th><th>Nombre del Negocio</th><th>Correo Administrador</th><th>Plan Contratado</th><th>Estado</th><th>Fecha Alta</th><th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
             <tbody id="tabla-empresas-body">
@@ -124,7 +113,7 @@
         </div>
       </div>
 
-      <!-- VISTA EMPRESA -->
+      <!-- EMPRESA PANEL -->
       <div id="panel-empresa" class="hidden">
         <div class="stats-grid">
           <div class="stat-card"><h3>Total Productos</h3><p id="stat-total">0</p></div>
@@ -138,8 +127,9 @@
             <button onclick="iniciarEscanerCamara()" class="btn" style="width: auto; background: #8b5cf6; white-space: nowrap;">📷 Escanear QR</button>
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 Exportar PDF</button>
             <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Nuevo Producto</button>
-            <button onclick="abrirModalMovimiento()" class="btn" style="width: auto; background: var(--primary);">⚡ Registrar Movimiento</button>
+            <button onclick="abrirModalMovimiento()" class="btn" style="width: auto; background: var(--primary);">⚡ Movimiento</button>
           </div>
         </div>
 
@@ -152,15 +142,7 @@
           <table>
             <thead>
               <tr>
-                <th>SKU / Código</th>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Ubicación</th>
-                <th>Stock Actual</th>
-                <th>Precio Coste</th>
-                <th>PVP</th>
-                <th>Estado</th>
-                <th style="text-align: center;">Acciones</th>
+                <th>SKU / Código</th><th>Producto</th><th>Categoría</th><th>Ubicación</th><th>Stock Actual</th><th>Precio Coste</th><th>PVP</th><th>Estado</th><th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
             <tbody id="tabla-productos-body">
@@ -176,17 +158,13 @@
   <!-- MODALES -->
   <div id="modal-empresa" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-      <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Dar de Alta Nueva Empresa</h3>
+      <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nueva Empresa</h3>
       <form onsubmit="guardarNuevaEmpresa(event)">
-        <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="e-nombre" required placeholder="Ej: Ferretería Central S.L."></div>
-        <div class="form-group"><label>Correo Administrador</label><input type="email" id="e-email" required placeholder="gerente@empresa.com"></div>
+        <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="e-nombre" required placeholder="Ferretería Central"></div>
+        <div class="form-group"><label>Correo Administrador</label><input type="email" id="e-email" required placeholder="admin@empresa.com"></div>
         <div class="form-group"><label>Contraseña</label><input type="password" id="e-pass" required placeholder="••••••••"></div>
         <div class="form-group"><label>Plan SaaS</label>
-          <select id="e-plan">
-            <option value="Standard">Plan Standard</option>
-            <option value="Enterprise Pro">Plan Enterprise Pro</option>
-            <option value="Unlimited">Plan Unlimited</option>
-          </select>
+          <select id="e-plan"><option value="Standard">Standard</option><option value="Enterprise Pro">Enterprise Pro</option><option value="Unlimited">Unlimited</option></select>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn" style="background: var(--success);">Crear Empresa</button>
@@ -292,7 +270,7 @@
         document.getElementById('panel-empresa').classList.add('hidden');
         cargarEmpresasSaaS();
       } else {
-        document.getElementById('empresa-titulo').innerText = "StockMaster Enterprise - Panel Empresa: " + usuario.nombre;
+        document.getElementById('empresa-titulo').innerText = "StockMaster Enterprise - " + usuario.nombre;
         document.getElementById('panel-superadmin').classList.add('hidden');
         document.getElementById('panel-empresa').classList.remove('hidden');
         cargarDatosDashboard(usuario.empresaId);
@@ -466,6 +444,44 @@
           alert("Error: " + data.error);
         }
       });
+    }
+
+    function exportarPDF() {
+      const { jsPDF } = window.jspdf;
+      var doc = new jsPDF();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("StockMaster Enterprise - Reporte de Inventario", 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Generado por: " + usuarioActual.nombre, 14, 28);
+      doc.text("Fecha: " + new Date().toLocaleString(), 14, 34);
+
+      var y = 45;
+      doc.setFillColor(37, 99, 235);
+      doc.rect(14, y, 180, 8, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.text("SKU", 16, y + 6);
+      doc.text("Producto", 50, y + 6);
+      doc.text("Stock", 140, y + 6);
+      doc.text("PVP", 170, y + 6);
+
+      y += 12;
+      doc.setTextColor(30, 41, 59);
+      doc.setFont("helvetica", "normal");
+
+      todosLosProductos.forEach(function(p) {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.text(String(p.sku), 16, y);
+        doc.text(String(p.nombre).substring(0, 35), 50, y);
+        doc.text(String(p.stockActual), 140, y);
+        doc.text(String(p.precioVenta) + " €", 170, y);
+        y += 8;
+      });
+
+      doc.save("inventario-stockmaster.pdf");
     }
 
     function iniciarEscanerCamara() {
