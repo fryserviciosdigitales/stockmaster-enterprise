@@ -138,7 +138,9 @@
           <button onclick="detenerEscanerCamara()" class="btn" style="width: auto; background: var(--danger); margin-top: 1rem;">Cerrar Cámara</button>
         </div>
 
-        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
+        <!-- TABLA DE PRODUCTOS -->
+        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto; margin-bottom: 2rem;">
+          <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📦 Inventario Actual</h3>
           <table>
             <thead>
               <tr>
@@ -147,6 +149,21 @@
             </thead>
             <tbody id="tabla-productos-body">
               <tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--text-muted);">Cargando catálogo...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABLA DE MOVIMIENTOS RECIENTES -->
+        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
+          <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📋 Historial de Movimientos y Auditoría</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>ID Movimiento</th><th>SKU</th><th>Tipo</th><th>Cantidad</th><th>Ubicación</th><th>Fecha y Hora</th><th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-movimientos-body">
+              <tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Cargando historial...</td></tr>
             </tbody>
           </table>
         </div>
@@ -275,6 +292,7 @@
         document.getElementById('panel-empresa').classList.remove('hidden');
         cargarDatosDashboard(usuario.empresaId);
         cargarTablaProductos(usuario.empresaId);
+        cargarMovimientos(usuario.empresaId);
       }
     }
 
@@ -359,6 +377,33 @@
       });
     }
 
+    function cargarMovimientos(empresaId) {
+      apiCall({ action: 'listarMovimientos', empresaId: empresaId }, function(data) {
+        if (data.success) {
+          var tbody = document.getElementById('tabla-movimientos-body');
+          tbody.innerHTML = '';
+          if (data.movimientos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No hay movimientos registrados todavía.</td></tr>';
+            return;
+          }
+          data.movimientos.forEach(function(m) {
+            var badgeColor = (m.tipo === 'COMPRA') ? '#dcfce7; color: #16a34a' : '#fee2e2; color: #dc2626';
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="font-family: monospace; font-size: 0.8rem;">${m.movimientoId}</td>
+              <td style="font-weight: bold; font-family: monospace;">${m.sku}</td>
+              <td><span style="background: ${badgeColor}; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${m.tipo}</span></td>
+              <td style="font-weight: bold;">${m.cantidad}</td>
+              <td>${m.ubicacion}</td>
+              <td>${new Date(m.fechaHora).toLocaleString()}</td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">${m.usuario}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      });
+    }
+
     function renderizarTabla(lista) {
       var tbody = document.getElementById('tabla-productos-body');
       tbody.innerHTML = '';
@@ -436,10 +481,11 @@
       };
       apiCall(datos, function(data) {
         if (data.success) {
-          alert("Movimiento registrado. Stock actual: " + data.nuevoStock);
+          alert("Movimiento registrado con éxito.");
           cerrarModalMovimiento();
           cargarTablaProductos(usuarioActual.empresaId);
           cargarDatosDashboard(usuarioActual.empresaId);
+          cargarMovimientos(usuarioActual.empresaId);
         } else {
           alert("Error: " + data.error);
         }
