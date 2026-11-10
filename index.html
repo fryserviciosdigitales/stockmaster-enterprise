@@ -76,6 +76,10 @@
       </div>
       <button type="submit" class="btn">Iniciar Sesión</button>
     </form>
+    <div style="margin-top: 1rem; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+      Acceso Superadmin: <b>admin@inventario.com</b> / <b>123456</b><br>
+      Acceso Empresa Demo: <b>demo@ferreteria.com</b> / <b>123456</b>
+    </div>
   </div>
 
   <!-- PANEL PRINCIPAL -->
@@ -90,7 +94,7 @@
     
     <div class="dash-content">
       
-      <!-- VISTA SUPERADMIN (GESTIÓN DE EMPRESAS SAAS) -->
+      <!-- VISTA SUPERADMIN -->
       <div id="panel-superadmin" class="hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <div>
@@ -110,30 +114,22 @@
                 <th>Plan Contratado</th>
                 <th>Estado</th>
                 <th>Fecha Alta</th>
+                <th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
             <tbody id="tabla-empresas-body">
-              <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">Cargando empresas...</td></tr>
+              <tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">Cargando empresas...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- VISTA EMPRESA (INVENTARIO Y STOCK) -->
+      <!-- VISTA EMPRESA -->
       <div id="panel-empresa" class="hidden">
         <div class="stats-grid">
-          <div class="stat-card">
-            <h3>Total Productos</h3>
-            <p id="stat-total">0</p>
-          </div>
-          <div class="stat-card" style="border-left-color: var(--success);">
-            <h3>Valor del Inventario</h3>
-            <p id="stat-valor">0.00 €</p>
-          </div>
-          <div class="stat-card" style="border-left-color: var(--danger);">
-            <h3>Alertas Stock Mínimo</h3>
-            <p id="stat-alertas">0</p>
-          </div>
+          <div class="stat-card"><h3>Total Productos</h3><p id="stat-total">0</p></div>
+          <div class="stat-card" style="border-left-color: var(--success);"><h3>Valor del Inventario</h3><p id="stat-valor">0.00 €</p></div>
+          <div class="stat-card" style="border-left-color: var(--danger);"><h3>Alertas Stock Mínimo</h3><p id="stat-alertas">0</p></div>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
@@ -177,29 +173,19 @@
     </div>
   </div>
 
-  <!-- MODAL NUEVA EMPRESA -->
+  <!-- MODALES -->
   <div id="modal-empresa" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Dar de Alta Nueva Empresa</h3>
       <form onsubmit="guardarNuevaEmpresa(event)">
-        <div class="form-group">
-          <label>Nombre del Negocio / Empresa</label>
-          <input type="text" id="e-nombre" required placeholder="Ej: Ferretería Central S.L.">
-        </div>
-        <div class="form-group">
-          <label>Correo del Administrador de la Empresa</label>
-          <input type="email" id="e-email" required placeholder="gerente@ferreteriacentral.com">
-        </div>
-        <div class="form-group">
-          <label>Contraseña Inicial de Acceso</label>
-          <input type="password" id="e-pass" required placeholder="••••••••">
-        </div>
-        <div class="form-group">
-          <label>Plan SaaS Contratado</label>
+        <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="e-nombre" required placeholder="Ej: Ferretería Central S.L."></div>
+        <div class="form-group"><label>Correo Administrador</label><input type="email" id="e-email" required placeholder="gerente@empresa.com"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="e-pass" required placeholder="••••••••"></div>
+        <div class="form-group"><label>Plan SaaS</label>
           <select id="e-plan">
             <option value="Standard">Plan Standard</option>
-            <option value="Enterprise">Plan Enterprise Pro</option>
-            <option value="Unlimited">Plan Unlimited Multi-almacén</option>
+            <option value="Enterprise Pro">Plan Enterprise Pro</option>
+            <option value="Unlimited">Plan Unlimited</option>
           </select>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
@@ -210,7 +196,6 @@
     </div>
   </div>
 
-  <!-- MODALES DE PRODUCTOS Y MOVIMIENTOS -->
   <div id="modal-producto" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 500px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto;">
       <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nuevo Producto</h3>
@@ -263,7 +248,6 @@
     var todosLosProductos = [];
     var usuarioActual = null;
 
-    // Helper universal para llamadas API vía JSONP (evita errores CORS en GitHub Pages)
     function apiCall(params, callback) {
       var callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
       window[callbackName] = function(data) {
@@ -271,10 +255,8 @@
         document.body.removeChild(script);
         callback(data);
       };
-
       var query = new URLSearchParams(params);
       query.append('callback', callbackName);
-
       var script = document.createElement('script');
       script.src = gasUrl + '?' + query.toString();
       document.body.appendChild(script);
@@ -310,7 +292,7 @@
         document.getElementById('panel-empresa').classList.add('hidden');
         cargarEmpresasSaaS();
       } else {
-        document.getElementById('empresa-titulo').innerText = "StockMaster Enterprise - Panel Empresa";
+        document.getElementById('empresa-titulo').innerText = "StockMaster Enterprise - Panel Empresa: " + usuario.nombre;
         document.getElementById('panel-superadmin').classList.add('hidden');
         document.getElementById('panel-empresa').classList.remove('hidden');
         cargarDatosDashboard(usuario.empresaId);
@@ -324,7 +306,7 @@
           var tbody = document.getElementById('tabla-empresas-body');
           tbody.innerHTML = '';
           if (data.empresas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay empresas registradas todavía.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay empresas registradas todavía.</td></tr>';
             return;
           }
           data.empresas.forEach(function(emp) {
@@ -336,6 +318,7 @@
               <td><span style="background: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.plan}</span></td>
               <td><span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.activa}</span></td>
               <td>${new Date(emp.fechaAlta).toLocaleDateString()}</td>
+              <td style="text-align: center;"><button onclick="eliminarEmpresa('${emp.empresaId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️ Eliminar</button></td>
             `;
             tbody.appendChild(tr);
           });
@@ -355,7 +338,6 @@
         password: document.getElementById('e-pass').value,
         plan: document.getElementById('e-plan').value
       };
-
       apiCall(datos, function(data) {
         if (data.success) {
           alert("¡Empresa creada con éxito!");
@@ -365,6 +347,19 @@
           alert("Error al crear la empresa.");
         }
       });
+    }
+
+    function eliminarEmpresa(empresaId) {
+      if (confirm("¿Estás seguro de eliminar esta empresa cliente?")) {
+        apiCall({ action: 'eliminarEmpresa', empresaId: empresaId }, function(data) {
+          if (data.success) {
+            alert("Empresa eliminada.");
+            cargarEmpresasSaaS();
+          } else {
+            alert("Error al eliminar.");
+          }
+        });
+      }
     }
 
     function cargarDatosDashboard(empresaId) {
