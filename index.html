@@ -177,7 +177,7 @@
     </div>
   </div>
 
-  <!-- MODAL NUEVA EMPRESA (PARA SUPERADMIN) -->
+  <!-- MODAL NUEVA EMPRESA -->
   <div id="modal-empresa" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Dar de Alta Nueva Empresa</h3>
@@ -210,7 +210,7 @@
     </div>
   </div>
 
-  <!-- MODALES DE PRODUCTOS Y MOVIMIENTOS (PARA EMPRESAS) -->
+  <!-- MODALES DE PRODUCTOS Y MOVIMIENTOS -->
   <div id="modal-producto" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 500px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto;">
       <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nuevo Producto</h3>
@@ -263,6 +263,23 @@
     var todosLosProductos = [];
     var usuarioActual = null;
 
+    // Helper universal para llamadas API vía JSONP (evita errores CORS en GitHub Pages)
+    function apiCall(params, callback) {
+      var callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        callback(data);
+      };
+
+      var query = new URLSearchParams(params);
+      query.append('callback', callbackName);
+
+      var script = document.createElement('script');
+      script.src = gasUrl + '?' + query.toString();
+      document.body.appendChild(script);
+    }
+
     function ejecutarLogin(e) {
       e.preventDefault();
       var email = document.getElementById('email').value;
@@ -270,21 +287,16 @@
       var errorAlert = document.getElementById('error-alert');
       errorAlert.style.display = 'none';
 
-      fetch(gasUrl + '?action=login&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(password))
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            usuarioActual = data.usuario;
-            localStorage.setItem('stockmaster_user', JSON.stringify(usuarioActual));
-            mostrarDashboard(usuarioActual);
-          } else {
-            errorAlert.innerText = data.message || "Credenciales incorrectas";
-            errorAlert.style.display = 'block';
-          }
-        }).catch(() => {
-          errorAlert.innerText = "Error de conexión.";
+      apiCall({ action: 'login', email: email, password: password }, function(data) {
+        if (data.success) {
+          usuarioActual = data.usuario;
+          localStorage.setItem('stockmaster_user', JSON.stringify(usuarioActual));
+          mostrarDashboard(usuarioActual);
+        } else {
+          errorAlert.innerText = data.message || "Credenciales incorrectas";
           errorAlert.style.display = 'block';
-        });
+        }
+      });
     }
 
     function mostrarDashboard(usuario) {
@@ -307,30 +319,28 @@
     }
 
     function cargarEmpresasSaaS() {
-      fetch(gasUrl + '?action=listarEmpresas')
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            var tbody = document.getElementById('tabla-empresas-body');
-            tbody.innerHTML = '';
-            if (data.empresas.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay empresas registradas todavía.</td></tr>';
-              return;
-            }
-            data.empresas.forEach(emp => {
-              var tr = document.createElement('tr');
-              tr.innerHTML = `
-                <td style="font-weight: bold; font-family: monospace;">${emp.empresaId}</td>
-                <td style="font-weight: 600; color: var(--primary);">${emp.nombre}</td>
-                <td>${emp.emailContacto}</td>
-                <td><span style="background: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.plan}</span></td>
-                <td><span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.activa}</span></td>
-                <td>${new Date(emp.fechaAlta).toLocaleDateString()}</td>
-              `;
-              tbody.appendChild(tr);
-            });
+      apiCall({ action: 'listarEmpresas' }, function(data) {
+        if (data.success) {
+          var tbody = document.getElementById('tabla-empresas-body');
+          tbody.innerHTML = '';
+          if (data.empresas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay empresas registradas todavía.</td></tr>';
+            return;
           }
-        });
+          data.empresas.forEach(function(emp) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="font-weight: bold; font-family: monospace;">${emp.empresaId}</td>
+              <td style="font-weight: 600; color: var(--primary);">${emp.nombre}</td>
+              <td>${emp.emailContacto}</td>
+              <td><span style="background: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.plan}</span></td>
+              <td><span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.activa}</span></td>
+              <td>${new Date(emp.fechaAlta).toLocaleDateString()}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      });
     }
 
     function abrirModalNuevaEmpresa() { document.getElementById('modal-empresa').classList.remove('hidden'); }
@@ -346,41 +356,34 @@
         plan: document.getElementById('e-plan').value
       };
 
-      fetch(gasUrl + '?' + new URLSearchParams(datos).toString())
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert("¡Empresa creada con éxito!");
-            cerrarModalNuevaEmpresa();
-            cargarEmpresasSaaS();
-          } else {
-            alert("Error al crear la empresa.");
-          }
-        });
+      apiCall(datos, function(data) {
+        if (data.success) {
+          alert("¡Empresa creada con éxito!");
+          cerrarModalNuevaEmpresa();
+          cargarEmpresasSaaS();
+        } else {
+          alert("Error al crear la empresa.");
+        }
+      });
     }
 
-    // Funciones del panel de empresa
     function cargarDatosDashboard(empresaId) {
-      fetch(gasUrl + '?action=getDashboardData&empresaId=' + encodeURIComponent(empresaId))
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            document.getElementById('stat-total').innerText = data.stats.totalProductos;
-            document.getElementById('stat-valor').innerText = data.stats.valorInventario + " €";
-            document.getElementById('stat-alertas').innerText = data.stats.alertasStock;
-          }
-        });
+      apiCall({ action: 'getDashboardData', empresaId: empresaId }, function(data) {
+        if (data.success) {
+          document.getElementById('stat-total').innerText = data.stats.totalProductos;
+          document.getElementById('stat-valor').innerText = data.stats.valorInventario + " €";
+          document.getElementById('stat-alertas').innerText = data.stats.alertasStock;
+        }
+      });
     }
 
     function cargarTablaProductos(empresaId) {
-      fetch(gasUrl + '?action=getProductos&empresaId=' + encodeURIComponent(empresaId))
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            todosLosProductos = data.productos;
-            renderizarTabla(todosLosProductos);
-          }
-        });
+      apiCall({ action: 'getProductos', empresaId: empresaId }, function(data) {
+        if (data.success) {
+          todosLosProductos = data.productos;
+          renderizarTabla(todosLosProductos);
+        }
+      });
     }
 
     function renderizarTabla(lista) {
@@ -390,7 +393,7 @@
         tbody.innerHTML = '<tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay productos registrados.</td></tr>';
         return;
       }
-      lista.forEach(p => {
+      lista.forEach(function(p) {
         var estadoBadge = p.stockActual <= p.stockMinimo 
           ? '<span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">STOCK BAJO</span>'
           : '<span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">OK</span>';
@@ -413,13 +416,14 @@
 
     function filtrarTabla() {
       var texto = document.getElementById('buscador-input').value.toLowerCase().trim();
-      var filtrados = todosLosProductos.filter(p => p.sku.toLowerCase().includes(texto) || p.nombre.toLowerCase().includes(texto));
+      var filtrados = todosLosProductos.filter(function(p) { return p.sku.toLowerCase().includes(texto) || p.nombre.toLowerCase().includes(texto); });
       renderizarTabla(filtrados);
     }
 
     function abrirModalNuevoProducto() { document.getElementById('modal-producto').classList.remove('hidden'); }
     function cerrarModalProducto() { document.getElementById('modal-producto').classList.add('hidden'); }
-    function abrirModalMovimiento(sku = '') {
+    function abrirModalMovimiento(sku) {
+      sku = sku || '';
       document.getElementById('modal-movimiento').classList.remove('hidden');
       if (sku) document.getElementById('m-sku').value = sku;
     }
@@ -439,13 +443,12 @@
         precioCoste: document.getElementById('p-coste').value,
         precioVenta: document.getElementById('p-venta').value
       };
-      fetch(gasUrl + '?' + new URLSearchParams(datos).toString())
-        .then(() => {
-          alert("Producto guardado.");
-          cerrarModalProducto();
-          cargarTablaProductos(usuarioActual.empresaId);
-          cargarDatosDashboard(usuarioActual.empresaId);
-        });
+      apiCall(datos, function() {
+        alert("Producto guardado.");
+        cerrarModalProducto();
+        cargarTablaProductos(usuarioActual.empresaId);
+        cargarDatosDashboard(usuarioActual.empresaId);
+      });
     }
 
     function ejecutarMovimientoStock(e) {
@@ -458,32 +461,30 @@
         cantidad: document.getElementById('m-cantidad').value,
         usuario: usuarioActual.nombre
       };
-      fetch(gasUrl + '?' + new URLSearchParams(datos).toString())
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert("Movimiento registrado. Stock actual: " + data.nuevoStock);
-            cerrarModalMovimiento();
-            cargarTablaProductos(usuarioActual.empresaId);
-            cargarDatosDashboard(usuarioActual.empresaId);
-          } else {
-            alert("Error: " + data.error);
-          }
-        });
+      apiCall(datos, function(data) {
+        if (data.success) {
+          alert("Movimiento registrado. Stock actual: " + data.nuevoStock);
+          cerrarModalMovimiento();
+          cargarTablaProductos(usuarioActual.empresaId);
+          cargarDatosDashboard(usuarioActual.empresaId);
+        } else {
+          alert("Error: " + data.error);
+        }
+      });
     }
 
     function iniciarEscanerCamara() {
       document.getElementById('scanner-wrapper').classList.remove('hidden');
       html5QrcodeScanner = new Html5Qrcode("reader");
-      html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (codigo) => {
+      html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, function(codigo) {
         document.getElementById('buscador-input').value = codigo;
         filtrarTabla();
         detenerEscanerCamara();
-      }, () => {});
+      }, function() {});
     }
 
     function detenerEscanerCamara() {
-      if (html5QrcodenScanner) html5QrcodenScanner.stop();
+      if (html5QrcodeScanner) html5QrcodeScanner.stop();
       document.getElementById('scanner-wrapper').classList.add('hidden');
     }
 
