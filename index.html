@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StockMaster Enterprise - SaaS Multiempresa</title>
+  
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #cbd5e1;
+      --radius: 10px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 1rem; }
+    
+    .container { width: 100%; max-width: 420px; background: var(--card-bg); padding: 2.5rem 2rem; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .logo-area { text-align: center; margin-bottom: 2rem; }
+    .logo-area h1 { font-size: 1.8rem; color: var(--primary); font-weight: 800; letter-spacing: -0.5px; }
+    .logo-area p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
+    
+    .form-group { margin-bottom: 1.25rem; text-align: left; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text); }
+    .form-group input, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; outline: none; background: #fff; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+    
+    .btn { width: 100%; padding: 0.85rem; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: var(--primary-dark); }
+    
+    .error-msg { background: #fee2e2; color: var(--danger); padding: 0.75rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; text-align: center; display: none; }
+    .hidden { display: none !important; }
+    
+    #dashboard-view { width: 100%; max-width: 1300px; height: 95vh; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; }
+    .dash-header { background: #1e293b; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .dash-content { padding: 1.5rem; overflow-y: auto; flex: 1; background: #f1f5f9; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat-card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 4px solid var(--primary); }
+    .stat-card h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card p { font-size: 1.8rem; font-weight: 700; color: var(--text); margin-top: 0.5rem; }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background: #f8fafc; border-bottom: 2px solid var(--border); color: var(--text-muted); padding: 1rem; }
+    td { padding: 0.85rem; border-bottom: 1px solid #f1f5f9; }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE LOGIN -->
+  <div class="container" id="login-container">
+    <div class="logo-area">
+      <h1>StockMaster</h1>
+      <p>Enterprise SaaS Multiempresa</p>
+    </div>
+    
+    <div id="error-alert" class="error-msg"></div>
+
+    <form id="login-form" onsubmit="ejecutarLogin(event)">
+      <div class="form-group">
+        <label>Correo Electrónico</label>
+        <input type="email" id="email" required placeholder="admin@inventario.com">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn">Iniciar Sesión</button>
+    </form>
+  </div>
+
+  <!-- PANEL PRINCIPAL -->
+  <div id="dashboard-view" class="hidden">
+    <div class="dash-header">
+      <h2 id="empresa-titulo" style="font-size: 1.4rem;">StockMaster Enterprise</h2>
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <span id="user-info" style="font-size: 0.9rem; color: #cbd5e1;"></span>
+        <button onclick="cerrarSesion()" style="background: var(--danger); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600;">Cerrar Sesión</button>
+      </div>
+    </div>
+    
+    <div class="dash-content">
+      
+      <!-- VISTA SUPERADMIN (GESTIÓN DE EMPRESAS SAAS) -->
+      <div id="panel-superadmin" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div>
+            <h3 style="font-size: 1.2rem; color: var(--text);">Empresas Clientes Suscritas al SaaS</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Da de alta nuevas empresas y gestiona sus accesos de inventario.</p>
+          </div>
+          <button onclick="abrirModalNuevaEmpresa()" class="btn" style="width: auto; background: var(--success);">+ Registrar Nueva Empresa</button>
+        </div>
+
+        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Empresa</th>
+                <th>Nombre del Negocio</th>
+                <th>Correo Administrador</th>
+                <th>Plan Contratado</th>
+                <th>Estado</th>
+                <th>Fecha Alta</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-empresas-body">
+              <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">Cargando empresas...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VISTA EMPRESA (INVENTARIO Y STOCK) -->
+      <div id="panel-empresa" class="hidden">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Productos</h3>
+            <p id="stat-total">0</p>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--success);">
+            <h3>Valor del Inventario</h3>
+            <p id="stat-valor">0.00 €</p>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--danger);">
+            <h3>Alertas Stock Mínimo</h3>
+            <p id="stat-alertas">0</p>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; gap: 0.5rem; flex: 1; max-width: 500px;">
+            <input type="text" id="buscador-input" placeholder="🔍 Buscar por SKU o Nombre..." oninput="filtrarTabla()" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff;">
+            <button onclick="iniciarEscanerCamara()" class="btn" style="width: auto; background: #8b5cf6; white-space: nowrap;">📷 Escanear QR</button>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Nuevo Producto</button>
+            <button onclick="abrirModalMovimiento()" class="btn" style="width: auto; background: var(--primary);">⚡ Registrar Movimiento</button>
+          </div>
+        </div>
+
+        <div id="scanner-wrapper" class="hidden" style="background: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center; border: 1px solid var(--border);">
+          <div id="reader" style="width: 100%; max-width: 350px; margin: 0 auto;"></div>
+          <button onclick="detenerEscanerCamara()" class="btn" style="width: auto; background: var(--danger); margin-top: 1rem;">Cerrar Cámara</button>
+        </div>
+
+        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU / Código</th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Ubicación</th>
+                <th>Stock Actual</th>
+                <th>Precio Coste</th>
+                <th>PVP</th>
+                <th>Estado</th>
+                <th style="text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-productos-body">
+              <tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--text-muted);">Cargando catálogo...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL NUEVA EMPRESA (PARA SUPERADMIN) -->
+  <div id="modal-empresa" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Dar de Alta Nueva Empresa</h3>
+      <form onsubmit="guardarNuevaEmpresa(event)">
+        <div class="form-group">
+          <label>Nombre del Negocio / Empresa</label>
+          <input type="text" id="e-nombre" required placeholder="Ej: Ferretería Central S.L.">
+        </div>
+        <div class="form-group">
+          <label>Correo del Administrador de la Empresa</label>
+          <input type="email" id="e-email" required placeholder="gerente@ferreteriacentral.com">
+        </div>
+        <div class="form-group">
+          <label>Contraseña Inicial de Acceso</label>
+          <input type="password" id="e-pass" required placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Plan SaaS Contratado</label>
+          <select id="e-plan">
+            <option value="Standard">Plan Standard</option>
+            <option value="Enterprise">Plan Enterprise Pro</option>
+            <option value="Unlimited">Plan Unlimited Multi-almacén</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: var(--success);">Crear Empresa</button>
+          <button type="button" onclick="cerrarModalNuevaEmpresa()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODALES DE PRODUCTOS Y MOVIMIENTOS (PARA EMPRESAS) -->
+  <div id="modal-producto" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 500px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto;">
+      <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nuevo Producto</h3>
+      <form onsubmit="guardarNuevoProducto(event)">
+        <div class="form-group"><label>SKU / Código</label><input type="text" id="p-sku" required placeholder="PROD-001"></div>
+        <div class="form-group"><label>Nombre</label><input type="text" id="p-nombre" required placeholder="Taladro 18V"></div>
+        <div class="form-group"><label>Categoría</label><input type="text" id="p-categoria" placeholder="Herramientas"></div>
+        <div class="form-group"><label>Ubicación</label><input type="text" id="p-ubicacion" placeholder="Estantería 3"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group"><label>Stock Inicial</label><input type="number" id="p-stock" value="0" min="0" required></div>
+          <div class="form-group"><label>Stock Mínimo</label><input type="number" id="p-minimo" value="5" min="0" required></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group"><label>Precio Coste (€)</label><input type="number" step="0.01" id="p-coste" value="0.00" required></div>
+          <div class="form-group"><label>Precio Venta (€)</label><input type="number" step="0.01" id="p-venta" value="0.00" required></div>
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: var(--success);">Guardar</button>
+          <button type="button" onclick="cerrarModalProducto()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-movimiento" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <h3 style="margin-bottom: 1.5rem; color: var(--primary);">⚡ Registrar Movimiento</h3>
+      <form onsubmit="ejecutarMovimientoStock(event)">
+        <div class="form-group"><label>SKU del Producto</label><input type="text" id="m-sku" required placeholder="SKU"></div>
+        <div class="form-group"><label>Tipo</label>
+          <select id="m-tipo">
+            <option value="COMPRA">Entrada por Compra (+)</option>
+            <option value="VENTA">Salida por Venta (-)</option>
+            <option value="MERMA">Merma (-)</option>
+            <option value="AJUSTE">Ajuste Manual</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Cantidad</label><input type="number" id="m-cantidad" value="1" min="1" required></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn">Confirmar</button>
+          <button type="button" onclick="cerrarModalMovimiento()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    var gasUrl = "https://script.google.com/macros/s/AKfycbzk9jondVulH9TpDLYrVsJovqEMY9zS3xehgie9VeBIv1RMbjYIah-eOaKUpKW1NZJP/exec";
+    var html5QrcodeScanner = null;
+    var todosLosProductos = [];
+    var usuarioActual = null;
+
+    function ejecutarLogin(e) {
+      e.preventDefault();
+      var email = document.getElementById('email').value;
+      var password = document.getElementById('password').value;
+      var errorAlert = document.getElementById('error-alert');
+      errorAlert.style.display = 'none';
+
+      fetch(gasUrl + '?action=login&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(password))
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            usuarioActual = data.usuario;
+            localStorage.setItem('stockmaster_user', JSON.stringify(usuarioActual));
+            mostrarDashboard(usuarioActual);
+          } else {
+            errorAlert.innerText = data.message || "Credenciales incorrectas";
+            errorAlert.style.display = 'block';
+          }
+        }).catch(() => {
+          errorAlert.innerText = "Error de conexión.";
+          errorAlert.style.display = 'block';
+        });
+    }
+
+    function mostrarDashboard(usuario) {
+      document.getElementById('login-container').classList.add('hidden');
+      document.getElementById('dashboard-view').classList.remove('hidden');
+      document.getElementById('user-info').innerText = usuario.nombre + " (" + usuario.rol + ")";
+      
+      if (usuario.rol === 'SUPERADMIN') {
+        document.getElementById('empresa-titulo').innerText = "StockMaster - Panel Master SaaS";
+        document.getElementById('panel-superadmin').classList.remove('hidden');
+        document.getElementById('panel-empresa').classList.add('hidden');
+        cargarEmpresasSaaS();
+      } else {
+        document.getElementById('empresa-titulo').innerText = "StockMaster Enterprise - Panel Empresa";
+        document.getElementById('panel-superadmin').classList.add('hidden');
+        document.getElementById('panel-empresa').classList.remove('hidden');
+        cargarDatosDashboard(usuario.empresaId);
+        cargarTablaProductos(usuario.empresaId);
+      }
+    }
+
+    function cargarEmpresasSaaS() {
+      fetch(gasUrl + '?action=listarEmpresas')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            var tbody = document.getElementById('tabla-empresas-body');
+            tbody.innerHTML = '';
+            if (data.empresas.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay empresas registradas todavía.</td></tr>';
+              return;
+            }
+            data.empresas.forEach(emp => {
+              var tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td style="font-weight: bold; font-family: monospace;">${emp.empresaId}</td>
+                <td style="font-weight: 600; color: var(--primary);">${emp.nombre}</td>
+                <td>${emp.emailContacto}</td>
+                <td><span style="background: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.plan}</span></td>
+                <td><span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.activa}</span></td>
+                <td>${new Date(emp.fechaAlta).toLocaleDateString()}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+          }
+        });
+    }
+
+    function abrirModalNuevaEmpresa() { document.getElementById('modal-empresa').classList.remove('hidden'); }
+    function cerrarModalNuevaEmpresa() { document.getElementById('modal-empresa').classList.add('hidden'); }
+
+    function guardarNuevaEmpresa(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'crearEmpresa',
+        nombre: document.getElementById('e-nombre').value,
+        email: document.getElementById('e-email').value,
+        password: document.getElementById('e-pass').value,
+        plan: document.getElementById('e-plan').value
+      };
+
+      fetch(gasUrl + '?' + new URLSearchParams(datos).toString())
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert("¡Empresa creada con éxito!");
+            cerrarModalNuevaEmpresa();
+            cargarEmpresasSaaS();
+          } else {
+            alert("Error al crear la empresa.");
+          }
+        });
+    }
+
+    // Funciones del panel de empresa
+    function cargarDatosDashboard(empresaId) {
+      fetch(gasUrl + '?action=getDashboardData&empresaId=' + encodeURIComponent(empresaId))
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('stat-total').innerText = data.stats.totalProductos;
+            document.getElementById('stat-valor').innerText = data.stats.valorInventario + " €";
+            document.getElementById('stat-alertas').innerText = data.stats.alertasStock;
+          }
+        });
+    }
+
+    function cargarTablaProductos(empresaId) {
+      fetch(gasUrl + '?action=getProductos&empresaId=' + encodeURIComponent(empresaId))
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            todosLosProductos = data.productos;
+            renderizarTabla(todosLosProductos);
+          }
+        });
+    }
+
+    function renderizarTabla(lista) {
+      var tbody = document.getElementById('tabla-productos-body');
+      tbody.innerHTML = '';
+      if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay productos registrados.</td></tr>';
+        return;
+      }
+      lista.forEach(p => {
+        var estadoBadge = p.stockActual <= p.stockMinimo 
+          ? '<span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">STOCK BAJO</span>'
+          : '<span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">OK</span>';
+
+        var tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight: bold; font-family: monospace;">${p.sku}</td>
+          <td style="font-weight: 600; color: var(--primary);">${p.nombre}</td>
+          <td>${p.categoria || '-'}</td>
+          <td>📍 ${p.ubicacion || 'General'}</td>
+          <td style="font-weight: bold;">${p.stockActual}</td>
+          <td>${parseFloat(p.precioCoste || 0).toFixed(2)} €</td>
+          <td>${parseFloat(p.precioVenta || 0).toFixed(2)} €</td>
+          <td>${estadoBadge}</td>
+          <td style="text-align: center;"><button onclick="abrirModalMovimiento('${p.sku}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">⚡ Mover</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filtrarTabla() {
+      var texto = document.getElementById('buscador-input').value.toLowerCase().trim();
+      var filtrados = todosLosProductos.filter(p => p.sku.toLowerCase().includes(texto) || p.nombre.toLowerCase().includes(texto));
+      renderizarTabla(filtrados);
+    }
+
+    function abrirModalNuevoProducto() { document.getElementById('modal-producto').classList.remove('hidden'); }
+    function cerrarModalProducto() { document.getElementById('modal-producto').classList.add('hidden'); }
+    function abrirModalMovimiento(sku = '') {
+      document.getElementById('modal-movimiento').classList.remove('hidden');
+      if (sku) document.getElementById('m-sku').value = sku;
+    }
+    function cerrarModalMovimiento() { document.getElementById('modal-movimiento').classList.add('hidden'); }
+
+    function guardarNuevoProducto(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'guardarProducto',
+        empresaId: usuarioActual.empresaId,
+        sku: document.getElementById('p-sku').value,
+        nombre: document.getElementById('p-nombre').value,
+        categoria: document.getElementById('p-categoria').value,
+        ubicacion: document.getElementById('p-ubicacion').value,
+        stockActual: document.getElementById('p-stock').value,
+        stockMinimo: document.getElementById('p-minimo').value,
+        precioCoste: document.getElementById('p-coste').value,
+        precioVenta: document.getElementById('p-venta').value
+      };
+      fetch(gasUrl + '?' + new URLSearchParams(datos).toString())
+        .then(() => {
+          alert("Producto guardado.");
+          cerrarModalProducto();
+          cargarTablaProductos(usuarioActual.empresaId);
+          cargarDatosDashboard(usuarioActual.empresaId);
+        });
+    }
+
+    function ejecutarMovimientoStock(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'registrarMovimiento',
+        empresaId: usuarioActual.empresaId,
+        sku: document.getElementById('m-sku').value,
+        tipo: document.getElementById('m-tipo').value,
+        cantidad: document.getElementById('m-cantidad').value,
+        usuario: usuarioActual.nombre
+      };
+      fetch(gasUrl + '?' + new URLSearchParams(datos).toString())
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert("Movimiento registrado. Stock actual: " + data.nuevoStock);
+            cerrarModalMovimiento();
+            cargarTablaProductos(usuarioActual.empresaId);
+            cargarDatosDashboard(usuarioActual.empresaId);
+          } else {
+            alert("Error: " + data.error);
+          }
+        });
+    }
+
+    function iniciarEscanerCamara() {
+      document.getElementById('scanner-wrapper').classList.remove('hidden');
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (codigo) => {
+        document.getElementById('buscador-input').value = codigo;
+        filtrarTabla();
+        detenerEscanerCamara();
+      }, () => {});
+    }
+
+    function detenerEscanerCamara() {
+      if (html5QrcodenScanner) html5QrcodenScanner.stop();
+      document.getElementById('scanner-wrapper').classList.add('hidden');
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('stockmaster_user');
+      location.reload();
+    }
+
+    window.onload = function() {
+      var saved = localStorage.getItem('stockmaster_user');
+      if (saved) {
+        try {
+          usuarioActual = JSON.parse(saved);
+          mostrarDashboard(usuarioActual);
+        } catch(e) { localStorage.removeItem('stockmaster_user'); }
+      }
+    };
+  </script>
+</body>
+</html>
