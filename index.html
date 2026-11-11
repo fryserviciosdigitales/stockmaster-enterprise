@@ -7,6 +7,7 @@
   
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root {
@@ -46,14 +47,17 @@
     .dash-header { background: #1e293b; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
     .dash-content { padding: 1.5rem; overflow-y: auto; flex: 1; background: #f1f5f9; }
     
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
     .stat-card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 4px solid var(--primary); }
-    .stat-card h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-card p { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-top: 0.5rem; }
+    .stat-card h3 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card p { font-size: 1.5rem; font-weight: 700; color: var(--text); margin-top: 0.5rem; }
     
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
     th { background: #f8fafc; border-bottom: 2px solid var(--border); color: var(--text-muted); padding: 1rem; }
     td { padding: 0.85rem; border-bottom: 1px solid #f1f5f9; }
+    
+    .filter-tab { padding: 6px 12px; background: #e2e8f0; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; color: var(--text); }
+    .filter-tab.active { background: var(--primary); color: #fff; }
   </style>
 </head>
 <body>
@@ -129,6 +133,21 @@
           <div class="stat-card" style="border-left-color: var(--danger);"><h3>Stock Bajo</h3><p id="stat-alertas">0</p></div>
         </div>
 
+        <!-- SECCIÓN DE GRÁFICO ANALÍTICO -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+          <div style="background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text);">📊 Distribución de Inventario por Categoría</h3>
+            <div style="height: 220px; position: relative;">
+              <canvas id="chartCategorias"></canvas>
+            </div>
+          </div>
+          <div style="background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: center; text-align: center;">
+            <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">ESTADO GENERAL</h3>
+            <p style="font-size: 1.2rem; font-weight: 700; color: var(--success);" id="lbl-estado-salud">Saludable 🟢</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem;">Stock sincronizado en tiempo real con Google Sheets y Cloud Storage.</p>
+          </div>
+        </div>
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div style="display: flex; gap: 0.5rem; flex: 1; max-width: 500px;">
             <input type="text" id="buscador-input" placeholder="🔍 Buscar por SKU o Nombre..." oninput="filtrarTabla()" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff;">
@@ -136,6 +155,7 @@
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 PDF</button>
+            <button onclick="exportarCSV()" class="btn" style="width: auto; background: #0284c7;">📊 CSV</button>
             <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Producto</button>
             <button onclick="abrirModalAlmacen()" class="btn" style="width: auto; background: var(--warning);">🏢 Almacén</button>
             <button onclick="abrirModalProveedor()" class="btn" style="width: auto; background: #0891b2;">🚚 Proveedor</button>
@@ -149,9 +169,16 @@
           <button onclick="detenerEscanerCamara()" class="btn" style="width: auto; background: var(--danger); margin-top: 1rem;">Cerrar Cámara</button>
         </div>
 
-        <!-- TABLA DE PRODUCTOS -->
+        <!-- TABLA DE PRODUCTOS CON FILTROS -->
         <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto; margin-bottom: 2rem;">
-          <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📦 Inventario Actual</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc; flex-wrap: wrap; gap: 1rem;">
+            <h3 style="font-size: 1rem;">📦 Inventario Actual</h3>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="filter-tab active" onclick="cambiarFiltroEstado('TODOS', this)">Todos</button>
+              <button class="filter-tab" onclick="cambiarFiltroEstado('OK', this)">Stock OK</button>
+              <button class="filter-tab" onclick="cambiarFiltroEstado('BAJO', this)">Stock Bajo ⚠️</button>
+            </div>
+          </div>
           <table>
             <thead>
               <tr>
@@ -334,6 +361,8 @@
     var todosLosProductos = [];
     var todosLosProveedores = [];
     var usuarioActual = null;
+    var chartInstancia = null;
+    var filtroEstadoActual = 'TODOS';
 
     function apiCall(params, callback) {
       var callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
@@ -458,10 +487,15 @@
           document.getElementById('stat-margen').innerText = data.stats.margenEstimado + " €";
           document.getElementById('stat-alertas').innerText = data.stats.alertasStock;
 
+          var lblSalud = document.getElementById('lbl-estado-salud');
           if (data.stats.alertasStock > 0) {
             document.getElementById('alertas-sistema').classList.remove('hidden');
+            lblSalud.innerText = "Atención Requerida ⚠️";
+            lblSalud.style.color = "var(--danger)";
           } else {
             document.getElementById('alertas-sistema').classList.add('hidden');
+            lblSalud.innerText = "Saludable 🟢";
+            lblSalud.style.color = "var(--success)";
           }
         }
       });
@@ -473,6 +507,41 @@
           todosLosProductos = data.productos;
           renderizarTabla(todosLosProductos);
           actualizarDesplegablesProductos();
+          actualizarGraficoCategorias();
+        }
+      });
+    }
+
+    function actualizarGraficoCategorias() {
+      var categoriasMap = {};
+      todosLosProductos.forEach(function(p) {
+        var cat = p.categoria || 'Sin Categoría';
+        var val = p.stockActual * p.precioCoste;
+        categoriasMap[cat] = (categoriasMap[cat] || 0) + val;
+      });
+
+      var labels = Object.keys(categoriasMap);
+      var valores = Object.values(categoriasMap);
+
+      var ctx = document.getElementById('chartCategorias').getContext('2d');
+      if (chartInstancia) chartInstancia.destroy();
+
+      chartInstancia = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Valor de Coste (€)',
+            data: valores,
+            backgroundColor: '#2563eb',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
         }
       });
     }
@@ -605,14 +674,35 @@
       });
     }
 
+    function cambiarFiltroEstado(estado, btn) {
+      filtroEstadoActual = estado;
+      var tabs = document.querySelectorAll('.filter-tab');
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      btn.classList.add('active');
+      filtrarTabla();
+    }
+
     function renderizarTabla(lista) {
       var tbody = document.getElementById('tabla-productos-body');
       tbody.innerHTML = '';
-      if (lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay productos registrados.</td></tr>';
+      
+      var textoBusqueda = document.getElementById('buscador-input').value.toLowerCase().trim();
+      
+      var filtrados = lista.filter(function(p) {
+        var coincideTexto = p.sku.toLowerCase().includes(textoBusqueda) || p.nombre.toLowerCase().includes(textoBusqueda);
+        var esBajo = p.stockActual <= p.stockMinimo;
+        
+        if (filtroEstadoActual === 'OK' && esBajo) return false;
+        if (filtroEstadoActual === 'BAJO' && !esBajo) return false;
+        return coincideTexto;
+      });
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--text-muted);">No se encontraron productos.</td></tr>';
         return;
       }
-      lista.forEach(function(p) {
+
+      filtrados.forEach(function(p) {
         var estadoBadge = p.stockActual <= p.stockMinimo 
           ? '<span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">STOCK BAJO</span>'
           : '<span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">OK</span>';
@@ -637,9 +727,7 @@
     }
 
     function filtrarTabla() {
-      var texto = document.getElementById('buscador-input').value.toLowerCase().trim();
-      var filtrados = todosLosProductos.filter(function(p) { return p.sku.toLowerCase().includes(texto) || p.nombre.toLowerCase().includes(texto); });
-      renderizarTabla(filtrados);
+      renderizarTabla(todosLosProductos);
     }
 
     function abrirModalNuevoProducto() {
@@ -839,6 +927,18 @@
       });
 
       doc.save("inventario-stockmaster.pdf");
+    }
+
+    function exportarCSV() {
+      var csv = "SKU,Producto,Categoria,Ubicacion,StockActual,PrecioCoste,PrecioVenta\n";
+      todosLosProductos.forEach(function(p) {
+        csv += `"${p.sku}","${p.nombre}","${p.categoria}","${p.ubicacion}",${p.stockActual},${p.precioCoste},${p.precioVenta}\n`;
+      });
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "inventario_stockmaster.csv";
+      link.click();
     }
 
     function iniciarEscanerCamara() {
