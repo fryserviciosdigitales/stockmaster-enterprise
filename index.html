@@ -170,6 +170,7 @@
             <button onclick="abrirModalAuditoria()" class="btn" style="width: auto; background: #d97706;">📋 Auditar</button>
             <button onclick="abrirModalTraspaso()" class="btn" style="width: auto; background: #0891b2;">⇄ Traspasar</button>
             <button onclick="abrirModalLote()" class="btn" style="width: auto; background: #6366f1;">🏷️ Lote</button>
+            <button onclick="abrirModalGarantia()" class="btn" style="width: auto; background: #e11d48;">🔄 Garantías</button>
             <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Producto</button>
             <button onclick="abrirModalAlmacen()" class="btn" style="width: auto; background: var(--warning);">🏢 Almacén</button>
             <button onclick="abrirModalProveedor()" class="btn" style="width: auto; background: #0891b2;">🚚 Proveedor</button>
@@ -205,7 +206,7 @@
           </table>
         </div>
 
-        <!-- 4 PANELES INFERIORES RECUPERADOS -->
+        <!-- 4 PANELES INFERIORES -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas</h3>
@@ -240,6 +241,21 @@
           </div>
         </div>
 
+        <!-- TABLA DE GARANTÍAS Y DEVOLUCIONES -->
+        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto; margin-bottom: 2rem;">
+          <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🔄 Registro de Garantías y Devoluciones</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>SKU</th><th>Tipo Incidencia</th><th>Motivo</th><th>Estado</th><th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-garantias-body">
+              <tr><td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Sin incidencias registradas.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- TABLA DE MOVIMIENTOS -->
         <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
           <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📋 Historial de Movimientos</h3>
@@ -256,6 +272,30 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL REGISTRO DE GARANTÍA / DEVOLUCIÓN -->
+  <div id="modal-garantia" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px;">
+      <h3 style="margin-bottom: 1.5rem; color: #e11d48;">🔄 Registrar Garantía o Devolución</h3>
+      <form onsubmit="guardarNuevaGarantia(event)">
+        <div class="form-group"><label>Producto (SKU)</label>
+          <select id="g-sku" required><option value="">Seleccione Producto...</option></select>
+        </div>
+        <div class="form-group"><label>Tipo de Incidencia</label>
+          <select id="g-tipo">
+            <option value="Devolución Cliente">Devolución Cliente</option>
+            <option value="Garantía Proveedor">Garantía Proveedor</option>
+            <option value="Defecto de Fábrica">Defecto de Fábrica</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Motivo / Descripción</label><input type="text" id="g-motivo" required placeholder="Ej: No enciende / Pieza rota"></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: #e11d48;">Registrar Incidencia</button>
+          <button type="button" onclick="cerrarModalGarantia()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -532,6 +572,7 @@
         cargarProveedores(usuario.empresaId);
         cargarOrdenes(usuario.empresaId);
         cargarLotes(usuario.empresaId);
+        cargarGarantias(usuario.empresaId);
       }
     }
 
@@ -703,7 +744,31 @@
             tr.innerHTML = `
               <td style="font-family: monospace; font-weight: bold;">${l.sku}</td>
               <td>${l.numeroSerieLote}</td>
-              <td><span style="background: #dcfce7; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.7rem;">${l.estado}</span></td>
+              <td><span style="background: #dcfce7; color: #16a34a; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${l.estado || 'ACTIVO'}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      });
+    }
+
+    function cargarGarantias(empresaId) {
+      apiCall({ action: 'listarGarantias', empresaId: empresaId }, function(data) {
+        if (data.success) {
+          var tbody = document.getElementById('tabla-garantias-body');
+          tbody.innerHTML = '';
+          if (data.garantias.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Sin incidencias registradas.</td></tr>';
+            return;
+          }
+          data.garantias.forEach(function(g) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="font-family: monospace; font-weight: bold;">${g.sku}</td>
+              <td><span style="background: #fef08a; color: #854d0e; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${g.tipoIncidencia}</span></td>
+              <td>${g.motivo}</td>
+              <td><span style="background: #e0e7ff; color: #4338ca; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${g.estado}</span></td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(g.fecha).toLocaleDateString()}</td>
             `;
             tbody.appendChild(tr);
           });
@@ -716,6 +781,12 @@
       document.getElementById('modal-lote').classList.remove('hidden');
     }
     function cerrarModalLote() { document.getElementById('modal-lote').classList.add('hidden'); }
+
+    function abrirModalGarantia() {
+      actualizarDesplegablesProductos();
+      document.getElementById('modal-garantia').classList.remove('hidden');
+    }
+    function cerrarModalGarantia() { document.getElementById('modal-garantia').classList.add('hidden'); }
 
     function guardarNuevoLote(e) {
       e.preventDefault();
@@ -731,6 +802,24 @@
           alert("¡Lote registrado con éxito!");
           cerrarModalLote();
           cargarLotes(usuarioActual.empresaId);
+        }
+      });
+    }
+
+    function guardarNuevaGarantia(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'registrarGarantia',
+        empresaId: usuarioActual.empresaId,
+        sku: document.getElementById('g-sku').value,
+        tipoIncidencia: document.getElementById('g-tipo').value,
+        motivo: document.getElementById('g-motivo').value
+      };
+      apiCall(datos, function(data) {
+        if (data.success) {
+          alert("¡Incidencia de garantía registrada!");
+          cerrarModalGarantia();
+          cargarGarantias(usuarioActual.empresaId);
         }
       });
     }
@@ -972,11 +1061,13 @@
       var selMov = document.getElementById('m-sku');
       var selTr = document.getElementById('tr-sku');
       var selLote = document.getElementById('l-sku');
+      var selGar = document.getElementById('g-sku');
       
       selOrd.innerHTML = '<option value="">Seleccione Producto...</option>';
       selMov.innerHTML = '<option value="">Seleccione Producto...</option>';
       if (selTr) selTr.innerHTML = '<option value="">Seleccione Producto...</option>';
       if (selLote) selLote.innerHTML = '<option value="">Seleccione Producto...</option>';
+      if (selGar) selGar.innerHTML = '<option value="">Seleccione Producto...</option>';
       
       todosLosProductos.forEach(function(p) {
         var opt = `<option value="${p.sku}">${p.sku} - ${p.nombre}</option>`;
@@ -984,6 +1075,7 @@
         selMov.innerHTML += opt;
         if (selTr) selTr.innerHTML += opt;
         if (selLote) selLote.innerHTML += opt;
+        if (selGar) selGar.innerHTML += opt;
       });
     }
 
