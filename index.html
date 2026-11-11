@@ -117,9 +117,8 @@
       <!-- EMPRESA PANEL -->
       <div id="panel-empresa" class="hidden">
         
-        <!-- ALERTAS Y NOTIFICACIONES INTELIGENTES -->
         <div id="alertas-sistema" class="hidden" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; font-weight: 500;">
-          ⚠️ <b>Atención:</b> Existen productos por debajo del stock mínimo recomendado en su inventario. Revise las alertas rojas en la tabla.
+          ⚠️ <b>Atención:</b> Existen productos por debajo del stock mínimo recomendado en su inventario.
         </div>
 
         <div class="stats-grid">
@@ -162,37 +161,36 @@
           </table>
         </div>
 
-        <!-- TABLA DE ALMACENES -->
+        <!-- TABLA DE ALMACENES Y PROVEEDORES -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas Físicas</h3>
             <table>
               <thead>
-                <tr><th>Almacén</th><th>Ubicación</th><th>Responsable</th></tr>
+                <tr><th>Almacén</th><th>Ubicación</th><th style="text-align: center;">Acción</th></tr>
               </thead>
               <tbody id="tabla-almacenes-body">
-                <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando almacenes...</td></tr>
+                <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr>
               </tbody>
             </table>
           </div>
 
-          <!-- TABLA DE PROVEEDORES -->
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
-            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🚚 Directorio de Proveedores</h3>
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🚚 Proveedores</h3>
             <table>
               <thead>
-                <tr><th>Proveedor</th><th>Contacto</th><th>Teléfono</th></tr>
+                <tr><th>Proveedor</th><th>Contacto</th><th style="text-align: center;">Acción</th></tr>
               </thead>
               <tbody id="tabla-proveedores-body">
-                <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando proveedores...</td></tr>
+                <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- TABLA DE MOVIMIENTOS RECIENTES -->
+        <!-- TABLA DE MOVIMIENTOS -->
         <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
-          <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📋 Historial de Movimientos y Auditoría</h3>
+          <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📋 Historial de Movimientos</h3>
           <table>
             <thead>
               <tr>
@@ -230,14 +228,15 @@
 
   <div id="modal-producto" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 500px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto;">
-      <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nuevo Producto</h3>
+      <h3 id="modal-producto-titulo" style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nuevo Producto</h3>
       <form onsubmit="guardarNuevoProducto(event)">
+        <input type="hidden" id="p-id">
         <div class="form-group"><label>SKU / Código</label><input type="text" id="p-sku" required placeholder="PROD-001"></div>
         <div class="form-group"><label>Nombre</label><input type="text" id="p-nombre" required placeholder="Taladro 18V"></div>
         <div class="form-group"><label>Categoría</label><input type="text" id="p-categoria" placeholder="Herramientas"></div>
         <div class="form-group"><label>Ubicación</label><input type="text" id="p-ubicacion" placeholder="Estantería 3"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group"><label>Stock Inicial</label><input type="number" id="p-stock" value="0" min="0" required></div>
+          <div class="form-group"><label>Stock Actual</label><input type="number" id="p-stock" value="0" min="0" required></div>
           <div class="form-group"><label>Stock Mínimo</label><input type="number" id="p-minimo" value="5" min="0" required></div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -435,7 +434,6 @@
           document.getElementById('stat-valor').innerText = data.stats.valorInventario + " €";
           document.getElementById('stat-alertas').innerText = data.stats.alertasStock;
 
-          // Sistema de Alertas Inteligentes
           if (data.stats.alertasStock > 0) {
             document.getElementById('alertas-sistema').classList.remove('hidden');
           } else {
@@ -493,9 +491,9 @@
           data.almacenes.forEach(function(a) {
             var tr = document.createElement('tr');
             tr.innerHTML = `
-              <td style="font-weight: 600;">${a.nombreAlmacen}</td>
+              <td style="font-weight: 600;">${a.nombreAlmacen}<br><span style="font-size:0.75rem; color:var(--text-muted);">Resp: ${a.responsable}</span></td>
               <td>📍 ${a.ubicacionFisica}</td>
-              <td>👤 ${a.responsable}</td>
+              <td style="text-align: center;"><button onclick="eliminarAlmacen('${a.almacenId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️</button></td>
             `;
             tbody.appendChild(tr);
           });
@@ -515,9 +513,9 @@
           data.proveedores.forEach(function(p) {
             var tr = document.createElement('tr');
             tr.innerHTML = `
-              <td style="font-weight: 600;">${p.nombreProveedor}</td>
-              <td>${p.contacto} (${p.email})</td>
-              <td>📞 ${p.telefono}</td>
+              <td style="font-weight: 600;">${p.nombreProveedor}<br><span style="font-size:0.75rem; color:var(--text-muted);">📞 ${p.telefono}</span></td>
+              <td>${p.contacto}</td>
+              <td style="text-align: center;"><button onclick="eliminarProveedor('${p.proveedorId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️</button></td>
             `;
             tbody.appendChild(tr);
           });
@@ -547,7 +545,10 @@
           <td>${parseFloat(p.precioCoste || 0).toFixed(2)} €</td>
           <td>${parseFloat(p.precioVenta || 0).toFixed(2)} €</td>
           <td>${estadoBadge}</td>
-          <td style="text-align: center;"><button onclick="abrirModalMovimiento('${p.sku}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">⚡ Mover</button></td>
+          <td style="text-align: center; white-space: nowrap;">
+            <button onclick="editarProducto('${p.id}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;">✏️ Editar</button>
+            <button onclick="eliminarProducto('${p.id}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️</button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
@@ -559,14 +560,73 @@
       renderizarTabla(filtrados);
     }
 
-    function abrirModalNuevoProducto() { document.getElementById('modal-producto').classList.remove('hidden'); }
+    function abrirModalNuevoProducto() {
+      document.getElementById('modal-producto-titulo').innerText = "+ Registrar Nuevo Producto";
+      document.getElementById('p-id').value = "";
+      document.getElementById('p-sku').value = "";
+      document.getElementById('p-nombre').value = "";
+      document.getElementById('p-categoria').value = "";
+      document.getElementById('p-ubicacion').value = "";
+      document.getElementById('p-stock').value = "0";
+      document.getElementById('p-minimo').value = "5";
+      document.getElementById('p-coste').value = "0.00";
+      document.getElementById('p-venta').value = "0.00";
+      document.getElementById('modal-producto').classList.remove('hidden');
+    }
+
+    function editarProducto(id) {
+      var prod = todosLosProductos.find(function(p) { return p.id === id; });
+      if (!prod) return;
+      document.getElementById('modal-producto-titulo').innerText = "✏️ Editar Producto";
+      document.getElementById('p-id').value = prod.id;
+      document.getElementById('p-sku').value = prod.sku;
+      document.getElementById('p-nombre').value = prod.nombre;
+      document.getElementById('p-categoria').value = prod.categoria;
+      document.getElementById('p-ubicacion').value = prod.ubicacion;
+      document.getElementById('p-stock').value = prod.stockActual;
+      document.getElementById('p-minimo').value = prod.stockMinimo;
+      document.getElementById('p-coste').value = prod.precioCoste;
+      document.getElementById('p-venta').value = prod.precioVenta;
+      document.getElementById('modal-producto').classList.remove('hidden');
+    }
+
     function cerrarModalProducto() { document.getElementById('modal-producto').classList.add('hidden'); }
+
+    function eliminarProducto(id) {
+      if (confirm("¿Estás seguro de eliminar este producto?")) {
+        apiCall({ action: 'eliminarProducto', productoId: id }, function(data) {
+          if (data.success) {
+            alert("Producto eliminado.");
+            cargarTablaProductos(usuarioActual.empresaId);
+            cargarDatosDashboard(usuarioActual.empresaId);
+          } else {
+            alert("Error al eliminar.");
+          }
+        });
+      }
+    }
 
     function abrirModalAlmacen() { document.getElementById('modal-almacen').classList.remove('hidden'); }
     function cerrarModalAlmacen() { document.getElementById('modal-almacen').classList.add('hidden'); }
 
+    function eliminarAlmacen(id) {
+      if (confirm("¿Eliminar este almacén?")) {
+        apiCall({ action: 'eliminarAlmacen', almacenId: id }, function(data) {
+          if (data.success) { cargarAlmacenes(usuarioActual.empresaId); }
+        });
+      }
+    }
+
     function abrirModalProveedor() { document.getElementById('modal-proveedor').classList.remove('hidden'); }
     function cerrarModalProveedor() { document.getElementById('modal-proveedor').classList.add('hidden'); }
+
+    function eliminarProveedor(id) {
+      if (confirm("¿Eliminar este proveedor?")) {
+        apiCall({ action: 'eliminarProveedor', proveedorId: id }, function(data) {
+          if (data.success) { cargarProveedores(usuarioActual.empresaId); }
+        });
+      }
+    }
 
     function abrirModalMovimiento(sku) {
       sku = sku || '';
@@ -579,6 +639,7 @@
       e.preventDefault();
       var datos = {
         action: 'guardarProducto',
+        productoId: document.getElementById('p-id').value,
         empresaId: usuarioActual.empresaId,
         sku: document.getElementById('p-sku').value,
         nombre: document.getElementById('p-nombre').value,
@@ -589,11 +650,15 @@
         precioCoste: document.getElementById('p-coste').value,
         precioVenta: document.getElementById('p-venta').value
       };
-      apiCall(datos, function() {
-        alert("Producto guardado.");
-        cerrarModalProducto();
-        cargarTablaProductos(usuarioActual.empresaId);
-        cargarDatosDashboard(usuarioActual.empresaId);
+      apiCall(datos, function(data) {
+        if (data.success) {
+          alert(data.message);
+          cerrarModalProducto();
+          cargarTablaProductos(usuarioActual.empresaId);
+          cargarDatosDashboard(usuarioActual.empresaId);
+        } else {
+          alert("Error al guardar.");
+        }
       });
     }
 
