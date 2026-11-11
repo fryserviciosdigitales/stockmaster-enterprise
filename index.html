@@ -141,7 +141,7 @@
           <div class="stat-card" style="border-left-color: var(--danger);"><h3>Stock Bajo</h3><p id="stat-alertas">0</p></div>
         </div>
 
-        <!-- SECCIÓN DE GRÁFICO ANALÍTICO -->
+        <!-- SECCIÓN DE GRÁFICO ANALÍTICO Y PREDICCIÓN -->
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
           <div style="background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
             <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text);">📊 Distribución de Inventario por Categoría</h3>
@@ -149,10 +149,13 @@
               <canvas id="chartCategorias"></canvas>
             </div>
           </div>
-          <div style="background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: center; text-align: center;">
-            <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">ESTADO GENERAL</h3>
-            <p style="font-size: 1.2rem; font-weight: 700; color: var(--success);" id="lbl-estado-salud">Saludable 🟢</p>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem;">Stock sincronizado en tiempo real con Google Sheets y Cloud Storage.</p>
+          <div style="background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: center;">
+            <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; text-align: center;">ANÁLISIS PREDICTIVO</h3>
+            <p style="font-size: 1.1rem; font-weight: 700; color: var(--primary); text-align: center;" id="lbl-estado-salud">Saludable 🟢</p>
+            <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
+              <p>💡 <b>Rotación:</b> Óptima</p>
+              <p style="margin-top: 4px;">📈 <b>Demanda estimada:</b> Estable</p>
+            </div>
           </div>
         </div>
 
@@ -205,7 +208,7 @@
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas</h3>
             <table>
-              <thead><tr><th>Almacén</th><th style="text-align: center;">QR Zona</th></tr></thead>
+              <thead><tr><th>Almacén</th><th style="text-align: center;">Acciones</th></tr></thead>
               <tbody id="tabla-almacenes-body"><tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
             </table>
           </div>
@@ -213,7 +216,7 @@
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🚚 Proveedores</h3>
             <table>
-              <thead><tr><th>Proveedor</th><th>Contacto</th></tr></thead>
+              <thead><tr><th>Proveedor</th><th style="text-align: center;">Acciones</th></tr></thead>
               <tbody id="tabla-proveedores-body"><tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
             </table>
           </div>
@@ -340,8 +343,9 @@
 
   <div id="modal-almacen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-      <h3 style="margin-bottom: 1.5rem; color: var(--warning);">🏢 Nuevo Almacén o Zona</h3>
+      <h3 id="modal-almacen-titulo" style="margin-bottom: 1.5rem; color: var(--warning);">🏢 Nuevo Almacén o Zona</h3>
       <form onsubmit="guardarNuevoAlmacen(event)">
+        <input type="hidden" id="alm-id">
         <div class="form-group"><label>Nombre Almacén / Zona</label><input type="text" id="alm-nombre" required placeholder="Almacén Norte / Zona C"></div>
         <div class="form-group"><label>Ubicación Física</label><input type="text" id="alm-ubicacion" required placeholder="Polígono Industrial Sur"></div>
         <div class="form-group"><label>Responsable</label><input type="text" id="alm-resp" required placeholder="Ana López"></div>
@@ -355,8 +359,9 @@
 
   <div id="modal-proveedor" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-      <h3 style="margin-bottom: 1.5rem; color: #0891b2;">🚚 Nuevo Proveedor</h3>
+      <h3 id="modal-proveedor-titulo" style="margin-bottom: 1.5rem; color: #0891b2;">🚚 Nuevo Proveedor</h3>
       <form onsubmit="guardarNuevoProveedor(event)">
+        <input type="hidden" id="prov-id">
         <div class="form-group"><label>Nombre Empresa Proveedora</label><input type="text" id="prov-nombre" required placeholder="Global Tools S.L."></div>
         <div class="form-group"><label>Persona de Contacto</label><input type="text" id="prov-contacto" required placeholder="Pedro Sánchez"></div>
         <div class="form-group"><label>Correo Electrónico</label><input type="email" id="prov-email" required placeholder="ventas@globaltools.com"></div>
@@ -647,7 +652,11 @@
               var tr = document.createElement('tr');
               tr.innerHTML = `
                 <td style="font-weight: 600;">${a.nombreAlmacen}</td>
-                <td style="text-align: center;"><button onclick="imprimirQrZona('${a.nombreAlmacen}')" style="background: #fef08a; color: #854d0e; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">📱 QR Zona</button></td>
+                <td style="text-align: center; white-space: nowrap;">
+                  <button onclick="imprimirQrZona('${a.nombreAlmacen}')" style="background: #fef08a; color: #854d0e; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; margin-right: 4px;">📱 QR</button>
+                  <button onclick="editarAlmacen('${a.almacenId}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; margin-right: 4px;">✏️</button>
+                  <button onclick="eliminarAlmacen('${a.almacenId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">🗑️</button>
+                </td>
               `;
               tbody.appendChild(tr);
             });
@@ -744,12 +753,40 @@
           }
           data.proveedores.forEach(function(p) {
             var tr = document.createElement('tr');
-            tr.innerHTML = `<td style="font-weight: 600;">${p.nombreProveedor}</td><td>${p.contacto}</td>`;
+            tr.innerHTML = `
+              <td style="font-weight: 600;">${p.nombreProveedor}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <button onclick="editarProveedor('${p.proveedorId}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; margin-right: 4px;">✏️</button>
+                <button onclick="eliminarProveedor('${p.proveedorId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">🗑️</button>
+              </td>
+            `;
             tbody.appendChild(tr);
           });
           actualizarDesplegablesProveedores();
         }
       });
+    }
+
+    function eliminarAlmacen(almacenId) {
+      if (confirm("¿Estás seguro de eliminar este almacén o zona?")) {
+        apiCall({ action: 'eliminarAlmacen', almacenId: almacenId }, function(data) {
+          if (data.success) {
+            alert("Almacén eliminado.");
+            cargarAlmacenes(usuarioActual.empresaId);
+          }
+        });
+      }
+    }
+
+    function eliminarProveedor(proveedorId) {
+      if (confirm("¿Estás seguro de eliminar este proveedor?")) {
+        apiCall({ action: 'eliminarProveedor', proveedorId: proveedorId }, function(data) {
+          if (data.success) {
+            alert("Proveedor eliminado.");
+            cargarProveedores(usuarioActual.empresaId);
+          }
+        });
+      }
     }
 
     function cargarOrdenes(empresaId) {
@@ -929,10 +966,50 @@
       }
     }
 
-    function abrirModalAlmacen() { document.getElementById('modal-almacen').classList.remove('hidden'); }
+    function abrirModalAlmacen() {
+      document.getElementById('modal-almacen-titulo').innerText = "🏢 Nuevo Almacén o Zona";
+      document.getElementById('alm-id').value = "";
+      document.getElementById('alm-nombre').value = "";
+      document.getElementById('alm-ubicacion').value = "";
+      document.getElementById('alm-resp').value = "";
+      document.getElementById('modal-almacen').classList.remove('hidden');
+    }
+
+    function editarAlmacen(almacenId) {
+      var alm = todosLosAlmacenes.find(function(a) { return a.almacenId === almacenId; });
+      if (!alm) return;
+      document.getElementById('modal-almacen-titulo').innerText = "✏️ Editar Almacén / Zona";
+      document.getElementById('alm-id').value = alm.almacenId;
+      document.getElementById('alm-nombre').value = alm.nombreAlmacen;
+      document.getElementById('alm-ubicacion').value = alm.ubicacionFisica;
+      document.getElementById('alm-resp').value = alm.responsable;
+      document.getElementById('modal-almacen').classList.remove('hidden');
+    }
+
     function cerrarModalAlmacen() { document.getElementById('modal-almacen').classList.add('hidden'); }
 
-    function abrirModalProveedor() { document.getElementById('modal-proveedor').classList.remove('hidden'); }
+    function abrirModalProveedor() {
+      document.getElementById('modal-proveedor-titulo').innerText = "🚚 Nuevo Proveedor";
+      document.getElementById('prov-id').value = "";
+      document.getElementById('prov-nombre').value = "";
+      document.getElementById('prov-contacto').value = "";
+      document.getElementById('prov-email').value = "";
+      document.getElementById('prov-tel').value = "";
+      document.getElementById('modal-proveedor').classList.remove('hidden');
+    }
+
+    function editarProveedor(proveedorId) {
+      var prov = todosLosProveedores.find(function(p) { return p.proveedorId === proveedorId; });
+      if (!prov) return;
+      document.getElementById('modal-proveedor-titulo').innerText = "✏️ Editar Proveedor";
+      document.getElementById('prov-id').value = prov.proveedorId;
+      document.getElementById('prov-nombre').value = prov.nombreProveedor;
+      document.getElementById('prov-contacto').value = prov.contacto;
+      document.getElementById('prov-email').value = prov.email;
+      document.getElementById('prov-tel').value = prov.telefono;
+      document.getElementById('modal-proveedor').classList.remove('hidden');
+    }
+
     function cerrarModalProveedor() { document.getElementById('modal-proveedor').classList.add('hidden'); }
 
     function abrirModalOrden() { 
@@ -978,13 +1055,14 @@
       e.preventDefault();
       var datos = {
         action: 'guardarAlmacen',
+        almacenId: document.getElementById('alm-id').value,
         empresaId: usuarioActual.empresaId,
         nombreAlmacen: document.getElementById('alm-nombre').value,
         ubicacionFisica: document.getElementById('alm-ubicacion').value,
         responsable: document.getElementById('alm-resp').value
       };
-      apiCall(datos, function() {
-        alert("Almacén / Zona registrado con éxito.");
+      apiCall(datos, function(data) {
+        alert(data.message);
         cerrarModalAlmacen();
         cargarAlmacenes(usuarioActual.empresaId);
       });
@@ -994,14 +1072,15 @@
       e.preventDefault();
       var datos = {
         action: 'guardarProveedor',
+        proveedorId: document.getElementById('prov-id').value,
         empresaId: usuarioActual.empresaId,
         nombreProveedor: document.getElementById('prov-nombre').value,
         contacto: document.getElementById('prov-contacto').value,
         email: document.getElementById('prov-email').value,
         telefono: document.getElementById('prov-tel').value
       };
-      apiCall(datos, function() {
-        alert("Proveedor registrado con éxito.");
+      apiCall(datos, function(data) {
+        alert(data.message);
         cerrarModalProveedor();
         cargarProveedores(usuarioActual.empresaId);
       });
