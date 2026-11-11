@@ -9,6 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
     :root {
@@ -62,8 +63,8 @@
 
     @media print {
       body * { visibility: hidden; }
-      #etiqueta-impresion, #etiqueta-impresion * { visibility: visible; }
-      #etiqueta-impresion { position: absolute; left: 0; top: 0; width: 100%; }
+      #etiqueta-impresion, #etiqueta-impresion *, #etiqueta-qr-impresion, #etiqueta-qr-impresion * { visibility: visible; }
+      #etiqueta-impresion, #etiqueta-qr-impresion { position: absolute; left: 0; top: 0; width: 100%; }
     }
   </style>
 </head>
@@ -203,7 +204,7 @@
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas</h3>
             <table>
-              <thead><tr><th>Almacén</th><th>Ubicación</th></tr></thead>
+              <thead><tr><th>Almacén</th><th style="text-align: center;">QR Zona</th></tr></thead>
               <tbody id="tabla-almacenes-body"><tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
             </table>
           </div>
@@ -244,7 +245,7 @@
     </div>
   </div>
 
-  <!-- MODAL IMPRESIÓN ETIQUETA BARCODE -->
+  <!-- MODAL IMPRESIÓN ETIQUETA PRODUCTO -->
   <div id="modal-etiqueta" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; text-align: center;">
       <h3 style="margin-bottom: 1rem; color: var(--primary);">🏷️ Etiqueta de Producto</h3>
@@ -256,6 +257,21 @@
       <div style="display: flex; gap: 1rem;">
         <button onclick="window.print()" class="btn" style="background: var(--success);">🖨️ Imprimir Etiqueta</button>
         <button onclick="cerrarModalEtiqueta()" class="btn" style="background: #64748b;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL IMPRESIÓN QR ZONA -->
+  <div id="modal-etiqueta-qr" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; text-align: center;">
+      <h3 style="margin-bottom: 1rem; color: var(--warning);">📍 Etiqueta QR de Zona / Almacén</h3>
+      <div id="etiqueta-qr-impresion" style="border: 2px dashed #cbd5e1; padding: 1.5rem; border-radius: 8px; background: #fff; margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center;">
+        <h4 id="lbl-zona-nombre" style="font-size: 1.2rem; color: var(--text); margin-bottom: 1rem;">Zona o Almacén</h4>
+        <div id="qrcode-container" style="display: inline-block;"></div>
+      </div>
+      <div style="display: flex; gap: 1rem;">
+        <button onclick="window.print()" class="btn" style="background: var(--success);">🖨️ Imprimir QR</button>
+        <button onclick="cerrarModalQr()" class="btn" style="background: #64748b;">Cerrar</button>
       </div>
     </div>
   </div>
@@ -390,7 +406,6 @@
     var chartInstancia = null;
     var filtroEstadoActual = 'TODOS';
 
-    // Zonas Predeterminadas Globales del Sistema
     var zonasPredeterminadas = ["Estantería 1", "Estantería 2", "Zona A - Recepción", "Zona B - Almacén Central", "Zona C - Envíos"];
 
     function apiCall(params, callback) {
@@ -613,7 +628,10 @@
           } else {
             data.almacenes.forEach(function(a) {
               var tr = document.createElement('tr');
-              tr.innerHTML = `<td style="font-weight: 600;">${a.nombreAlmacen}</td><td>📍 ${a.ubicacionFisica}</td>`;
+              tr.innerHTML = `
+                <td style="font-weight: 600;">${a.nombreAlmacen}</td>
+                <td style="text-align: center;"><button onclick="imprimirQrZona('${a.nombreAlmacen}')" style="background: #fef08a; color: #854d0e; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">📱 QR Zona</button></td>
+              `;
               tbody.appendChild(tr);
             });
           }
@@ -621,6 +639,20 @@
         }
       });
     }
+
+    function imprimirQrZona(nombreZona) {
+      document.getElementById('lbl-zona-nombre').innerText = "Zona: " + nombreZona;
+      var container = document.getElementById('qrcode-container');
+      container.innerHTML = "";
+      new QRCode(container, {
+        text: "ZONA:" + nombreZona,
+        width: 150,
+        height: 150
+      });
+      document.getElementById('modal-etiqueta-qr').classList.remove('hidden');
+    }
+
+    function cerrarModalQr() { document.getElementById('modal-etiqueta-qr').classList.add('hidden'); }
 
     function actualizarDesplegableZonas() {
       var selUbi = document.getElementById('p-ubicacion');
@@ -642,7 +674,7 @@
         todosLosAlmacenes.forEach(function(a) {
           var opt = document.createElement('option');
           opt.value = a.nombreAlmacen;
-          opt.innerText = a.nombreAlmacen + " (" + a.ubicacionFisica + ")";
+          opt.innerText = a.nombreAlmacen;
           optGroupEmp.appendChild(opt);
         });
         selUbi.appendChild(optGroupEmp);
