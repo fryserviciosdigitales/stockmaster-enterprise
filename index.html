@@ -185,7 +185,7 @@
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📦 Órdenes de Compra</h3>
             <table>
-              <thead><tr><th>SKU</th><th>Cant.</th><th>Estado</th></tr></thead>
+              <thead><tr><th>SKU</th><th>Cant.</th><th style="text-align: center;">Acción</th></tr></thead>
               <tbody id="tabla-ordenes-body"><tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
             </table>
           </div>
@@ -289,8 +289,12 @@
     <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 style="margin-bottom: 1.5rem; color: #9333ea;">📦 Nueva Orden de Compra</h3>
       <form onsubmit="guardarNuevaOrden(event)">
-        <div class="form-group"><label>Proveedor</label><input type="text" id="ord-prov" required placeholder="Herramientas Globales S.A."></div>
-        <div class="form-group"><label>SKU del Producto</label><input type="text" id="ord-sku" required placeholder="SKU-001"></div>
+        <div class="form-group"><label>Proveedor</label>
+          <select id="ord-prov" required><option value="">Seleccione Proveedor...</option></select>
+        </div>
+        <div class="form-group"><label>Producto (SKU)</label>
+          <select id="ord-sku" required><option value="">Seleccione Producto...</option></select>
+        </div>
         <div class="form-group"><label>Cantidad a Pedir</label><input type="number" id="ord-cant" value="10" min="1" required></div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn" style="background: #9333ea;">Crear Pedido</button>
@@ -304,7 +308,9 @@
     <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 style="margin-bottom: 1.5rem; color: var(--primary);">⚡ Registrar Movimiento</h3>
       <form onsubmit="ejecutarMovimientoStock(event)">
-        <div class="form-group"><label>SKU del Producto</label><input type="text" id="m-sku" required placeholder="SKU"></div>
+        <div class="form-group"><label>Producto (SKU)</label>
+          <select id="m-sku" required><option value="">Seleccione Producto...</option></select>
+        </div>
         <div class="form-group"><label>Tipo</label>
           <select id="m-tipo">
             <option value="COMPRA">Entrada por Compra (+)</option>
@@ -326,6 +332,7 @@
     var gasUrl = "https://script.google.com/macros/s/AKfycbzk9jondVulH9TpDLYrVsJovqEMY9zS3xehgie9VeBIv1RMbjYIah-eOaKUpKW1NZJP/exec";
     var html5QrcodeScanner = null;
     var todosLosProductos = [];
+    var todosLosProveedores = [];
     var usuarioActual = null;
 
     function apiCall(params, callback) {
@@ -427,8 +434,6 @@
           alert("¡Empresa creada con éxito!");
           cerrarModalNuevaEmpresa();
           cargarEmpresasSaaS();
-        } else {
-          alert("Error al crear la empresa.");
         }
       });
     }
@@ -467,6 +472,7 @@
         if (data.success) {
           todosLosProductos = data.productos;
           renderizarTabla(todosLosProductos);
+          actualizarDesplegablesProductos();
         }
       });
     }
@@ -519,6 +525,7 @@
     function cargarProveedores(empresaId) {
       apiCall({ action: 'listarProveedores', empresaId: empresaId }, function(data) {
         if (data.success) {
+          todosLosProveedores = data.proveedores;
           var tbody = document.getElementById('tabla-proveedores-body');
           tbody.innerHTML = '';
           if (data.proveedores.length === 0) {
@@ -530,6 +537,7 @@
             tr.innerHTML = `<td style="font-weight: 600;">${p.nombreProveedor}</td><td>${p.contacto}</td>`;
             tbody.appendChild(tr);
           });
+          actualizarDesplegablesProveedores();
         }
       });
     }
@@ -544,15 +552,56 @@
             return;
           }
           data.ordenes.forEach(function(o) {
+            var accion = (o.estado === 'PENDIENTE')
+              ? `<button onclick="recibirOrden('${o.ordenId}')" style="background: #dcfce7; color: #16a34a; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">📥 Recibir</button>`
+              : `<span style="background: #e0e7ff; color: #4338ca; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.7rem;">COMPLETADO</span>`;
+
             var tr = document.createElement('tr');
             tr.innerHTML = `
               <td style="font-family: monospace; font-weight: bold;">${o.sku}</td>
               <td><b>${o.cantidad}</b></td>
-              <td><span style="background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.7rem;">${o.estado}</span></td>
+              <td style="text-align: center;">${accion}</td>
             `;
             tbody.appendChild(tr);
           });
         }
+      });
+    }
+
+    function recibirOrden(ordenId) {
+      if (confirm("¿Confirmar recepción de pedido? El stock se actualizará automáticamente.")) {
+        apiCall({ action: 'recibirOrdenCompra', empresaId: usuarioActual.empresaId, ordenId: ordenId, usuario: usuarioActual.nombre }, function(data) {
+          if (data.success) {
+            alert("¡Stock actualizado e ingreso registrado!");
+            cargarTablaProductos(usuarioActual.empresaId);
+            cargarDatosDashboard(usuarioActual.empresaId);
+            cargarOrdenes(usuarioActual.empresaId);
+            cargarMovimientos(usuarioActual.empresaId);
+          } else {
+            alert("Error al recibir orden.");
+          }
+        });
+      }
+    }
+
+    function actualizarDesplegablesProductos() {
+      var selOrd = document.getElementById('ord-sku');
+      var selMov = document.getElementById('m-sku');
+      selOrd.innerHTML = '<option value="">Seleccione Producto...</option>';
+      selMov.innerHTML = '<option value="">Seleccione Producto...</option>';
+      
+      todosLosProductos.forEach(function(p) {
+        var opt = `<option value="${p.sku}">${p.sku} - ${p.nombre}</option>`;
+        selOrd.innerHTML += opt;
+        selMov.innerHTML += opt;
+      });
+    }
+
+    function actualizarDesplegablesProveedores() {
+      var selOrd = document.getElementById('ord-prov');
+      selOrd.innerHTML = '<option value="">Seleccione Proveedor...</option>';
+      todosLosProveedores.forEach(function(p) {
+        selOrd.innerHTML += `<option value="${p.nombreProveedor}">${p.nombreProveedor}</option>`;
       });
     }
 
@@ -643,11 +692,15 @@
     function abrirModalProveedor() { document.getElementById('modal-proveedor').classList.remove('hidden'); }
     function cerrarModalProveedor() { document.getElementById('modal-proveedor').classList.add('hidden'); }
 
-    function abrirModalOrden() { document.getElementById('modal-orden').classList.remove('hidden'); }
+    function abrirModalOrden() { 
+      actualizarDesplegablesProductos();
+      actualizarDesplegablesProveedores();
+      document.getElementById('modal-orden').classList.remove('hidden'); 
+    }
     function cerrarModalOrden() { document.getElementById('modal-orden').classList.add('hidden'); }
 
     function abrirModalMovimiento(sku) {
-      sku = sku || '';
+      actualizarDesplegablesProductos();
       document.getElementById('modal-movimiento').classList.remove('hidden');
       if (sku) document.getElementById('m-sku').value = sku;
     }
