@@ -102,12 +102,12 @@
     
     <div class="dash-content">
       
-      <!-- SUPERADMIN PANEL -->
+      <!-- SUPERADMIN PANEL AVANZADO -->
       <div id="panel-superadmin" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h3 style="font-size: 1.2rem; color: var(--text);">Empresas Clientes Suscritas al SaaS</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem;">Gestión integral de compañías y accesos.</p>
+            <h3 style="font-size: 1.3rem; color: var(--text);">👑 Panel Master - Gestión de Empresas SaaS</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Control total de altas, edición de planes, suspensiones y bajas.</p>
           </div>
           <button onclick="abrirModalNuevaEmpresa()" class="btn" style="width: auto; background: var(--success);">+ Registrar Nueva Empresa</button>
         </div>
@@ -116,7 +116,7 @@
           <table>
             <thead>
               <tr>
-                <th>ID Empresa</th><th>Nombre del Negocio</th><th>Correo Administrador</th><th>Plan Contratado</th><th>Estado</th><th>Fecha Alta</th><th style="text-align: center;">Acciones</th>
+                <th>ID Empresa</th><th>Nombre del Negocio</th><th>Correo Administrador</th><th>Plan Contratado</th><th>Estado SaaS</th><th>Fecha Alta</th><th style="text-align: center;">Acciones de Control</th>
               </tr>
             </thead>
             <tbody id="tabla-empresas-body">
@@ -235,7 +235,7 @@
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏷️ Control de Lotes</h3>
             <table>
-              <thead><tr><th>SKU</th><th>Lote</th><th>Estado</th></tr></thead>
+              <thead><tr><th>SKU / Lote</th><th>Caducidad</th><th style="text-align: center;">Acciones</th></tr></thead>
               <tbody id="tabla-lotes-body"><tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando lotes...</td></tr></tbody>
             </table>
           </div>
@@ -275,6 +275,47 @@
     </div>
   </div>
 
+  <!-- MODAL EDITAR EMPRESA (SUPERADMIN) -->
+  <div id="modal-editar-empresa" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px;">
+      <h3 style="margin-bottom: 1.5rem; color: var(--primary);">✏️ Editar Datos de Empresa</h3>
+      <form onsubmit="guardarEdicionEmpresa(event)">
+        <input type="hidden" id="ee-id">
+        <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="ee-nombre" required></div>
+        <div class="form-group"><label>Correo de Contacto</label><input type="email" id="ee-email" required></div>
+        <div class="form-group"><label>Plan SaaS</label>
+          <select id="ee-plan"><option value="Standard">Standard</option><option value="Enterprise Pro">Enterprise Pro</option><option value="Unlimited">Unlimited</option></select>
+        </div>
+        <div class="form-group"><label>Estado Cuenta (Activa / Baja)</label>
+          <select id="ee-activa"><option value="SI">Activa (SI)</option><option value="NO">Suspendida / Baja (NO)</option></select>
+        </div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: var(--success);">Guardar Cambios</button>
+          <button type="button" onclick="cerrarModalEditarEmpresa()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL REGISTRO / EDICIÓN DE LOTE -->
+  <div id="modal-lote" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px;">
+      <h3 id="modal-lote-titulo" style="margin-bottom: 1.5rem; color: #6366f1;">🏷️ Registrar Nuevo Lote / Serie</h3>
+      <form onsubmit="guardarNuevoLote(event)">
+        <input type="hidden" id="l-serieid">
+        <div class="form-group"><label>Producto (SKU)</label>
+          <select id="l-sku" required><option value="">Seleccione Producto...</option></select>
+        </div>
+        <div class="form-group"><label>Número de Lote o Serie</label><input type="text" id="l-numero" required placeholder="LOTE-2026-X"></div>
+        <div class="form-group"><label>Fecha de Caducidad</label><input type="date" id="l-caducidad" required></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: #6366f1;">Guardar Lote</button>
+          <button type="button" onclick="cerrarModalLote()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL REGISTRO DE GARANTÍA / DEVOLUCIÓN -->
   <div id="modal-garantia" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px;">
@@ -294,24 +335,6 @@
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn" style="background: #e11d48;">Registrar Incidencia</button>
           <button type="button" onclick="cerrarModalGarantia()" class="btn" style="background: #64748b;">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL REGISTRO DE LOTE -->
-  <div id="modal-lote" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
-    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px;">
-      <h3 style="margin-bottom: 1.5rem; color: #6366f1;">🏷️ Registrar Nuevo Lote / Serie</h3>
-      <form onsubmit="guardarNuevoLote(event)">
-        <div class="form-group"><label>Producto (SKU)</label>
-          <select id="l-sku" required><option value="">Seleccione Producto...</option></select>
-        </div>
-        <div class="form-group"><label>Número de Lote o Serie</label><input type="text" id="l-numero" required placeholder="LOTE-2026-X"></div>
-        <div class="form-group"><label>Fecha de Caducidad (opcional)</label><input type="date" id="l-caducidad"></div>
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <button type="submit" class="btn" style="background: #6366f1;">Guardar Lote</button>
-          <button type="button" onclick="cerrarModalLote()" class="btn" style="background: #64748b;">Cancelar</button>
         </div>
       </form>
     </div>
@@ -512,6 +535,8 @@
     var todosLosProductos = [];
     var todosLosProveedores = [];
     var todosLosAlmacenes = [];
+    var todosLosLotes = [];
+    var todasLasEmpresasSaaS = [];
     var usuarioActual = null;
     var chartInstancia = null;
     var filtroEstadoActual = 'TODOS';
@@ -579,6 +604,7 @@
     function cargarEmpresasSaaS() {
       apiCall({ action: 'listarEmpresas' }, function(data) {
         if (data.success) {
+          todasLasEmpresasSaaS = data.empresas;
           var tbody = document.getElementById('tabla-empresas-body');
           tbody.innerHTML = '';
           if (data.empresas.length === 0) {
@@ -586,15 +612,27 @@
             return;
           }
           data.empresas.forEach(function(emp) {
+            var badgeEstado = (String(emp.activa).toUpperCase() === 'SI')
+              ? '<span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">ACTIVA</span>'
+              : '<span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">SUSPENDIDA/BAJA</span>';
+
+            var btnSuspenderTexto = (String(emp.activa).toUpperCase() === 'SI') ? '🔴 Suspender' : '🟢 Activar';
+            var btnSuspenderColor = (String(emp.activa).toUpperCase() === 'SI') ? '#fef08a; color: #854d0e' : '#dcfce7; color: #16a34a';
+            var nuevoEstadoTarget = (String(emp.activa).toUpperCase() === 'SI') ? 'NO' : 'SI';
+
             var tr = document.createElement('tr');
             tr.innerHTML = `
               <td style="font-weight: bold; font-family: monospace;">${emp.empresaId}</td>
               <td style="font-weight: 600; color: var(--primary);">${emp.nombre}</td>
               <td>${emp.emailContacto}</td>
               <td><span style="background: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.plan}</span></td>
-              <td><span style="background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem;">${emp.activa}</span></td>
+              <td>${badgeEstado}</td>
               <td>${new Date(emp.fechaAlta).toLocaleDateString()}</td>
-              <td style="text-align: center;"><button onclick="eliminarEmpresa('${emp.empresaId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️ Eliminar</button></td>
+              <td style="text-align: center; white-space: nowrap;">
+                <button onclick="cambiarEstadoEmpresa('${emp.empresaId}', '${nuevoEstadoTarget}')" style="background: ${btnSuspenderColor}; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; margin-right: 4px;">${btnSuspenderTexto}</button>
+                <button onclick="abrirModalEditarEmpresa('${emp.empresaId}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; margin-right: 4px;">✏️ Editar</button>
+                <button onclick="eliminarEmpresa('${emp.empresaId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">🗑️ Eliminar</button>
+              </td>
             `;
             tbody.appendChild(tr);
           });
@@ -604,6 +642,52 @@
 
     function abrirModalNuevaEmpresa() { document.getElementById('modal-empresa').classList.remove('hidden'); }
     function cerrarModalNuevaEmpresa() { document.getElementById('modal-empresa').classList.add('hidden'); }
+
+    function abrirModalEditarEmpresa(empresaId) {
+      var emp = todasLasEmpresasSaaS.find(function(e) { return e.empresaId === empresaId; });
+      if (!emp) return;
+      document.getElementById('ee-id').value = emp.empresaId;
+      document.getElementById('ee-nombre').value = emp.nombre;
+      document.getElementById('ee-email').value = emp.emailContacto;
+      document.getElementById('ee-plan').value = emp.plan;
+      document.getElementById('ee-activa').value = emp.activa;
+      document.getElementById('modal-editar-empresa').classList.remove('hidden');
+    }
+
+    function cerrarModalEditarEmpresa() { document.getElementById('modal-editar-empresa').classList.add('hidden'); }
+
+    function guardarEdicionEmpresa(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'guardarEmpresa',
+        empresaId: document.getElementById('ee-id').value,
+        nombre: document.getElementById('ee-nombre').value,
+        email: document.getElementById('ee-email').value,
+        plan: document.getElementById('ee-plan').value,
+        activa: document.getElementById('ee-activa').value
+      };
+      apiCall(datos, function(data) {
+        if (data.success) {
+          alert("¡Empresa actualizada correctamente!");
+          cerrarModalEditarEmpresa();
+          cargarEmpresasSaaS();
+        } else {
+          alert("Error: " + data.error);
+        }
+      });
+    }
+
+    function cambiarEstadoEmpresa(empresaId, nuevoEstado) {
+      var msg = (nuevoEstado === 'NO') ? '¿Estás seguro de dar de baja/suspender esta empresa?' : '¿Quieres reactivar esta empresa?';
+      if (confirm(msg)) {
+        apiCall({ action: 'cambiarEstadoEmpresa', empresaId: empresaId, estado: nuevoEstado }, function(data) {
+          if (data.success) {
+            alert(data.message);
+            cargarEmpresasSaaS();
+          }
+        });
+      }
+    }
 
     function guardarNuevaEmpresa(e) {
       e.preventDefault();
@@ -624,7 +708,7 @@
     }
 
     function eliminarEmpresa(empresaId) {
-      if (confirm("¿Estás seguro de eliminar esta empresa cliente?")) {
+      if (confirm("¿Estás seguro de eliminar permanentemente esta empresa cliente y sus accesos?")) {
         apiCall({ action: 'eliminarEmpresa', empresaId: empresaId }, function(data) {
           if (data.success) {
             alert("Empresa eliminada.");
@@ -733,18 +817,33 @@
     function cargarLotes(empresaId) {
       apiCall({ action: 'listarLotes', empresaId: empresaId }, function(data) {
         if (data.success) {
+          todosLosLotes = data.lotes;
           var tbody = document.getElementById('tabla-lotes-body');
           tbody.innerHTML = '';
           if (data.lotes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin lotes.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin lotes registrados.</td></tr>';
             return;
           }
           data.lotes.forEach(function(l) {
+            var caducidadTexto = l.caducidad ? new Date(l.caducidad).toLocaleDateString() : 'Sin caducidad';
+            var badgeEstado = '<span style="background: #dcfce7; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.7rem;">ACTIVO</span>';
+            
+            if (l.caducidad) {
+              var hoy = new Date();
+              var fechaCad = new Date(l.caducidad);
+              if (fechaCad < hoy) {
+                badgeEstado = '<span style="background: #fee2e2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.7rem;">CADUCADO</span>';
+              }
+            }
+
             var tr = document.createElement('tr');
             tr.innerHTML = `
-              <td style="font-family: monospace; font-weight: bold;">${l.sku}</td>
-              <td>${l.numeroSerieLote}</td>
-              <td><span style="background: #dcfce7; color: #16a34a; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${l.estado || 'ACTIVO'}</span></td>
+              <td><b style="font-family: monospace;">${l.sku}</b><br><span style="font-size: 0.8rem; color: var(--text-muted);">${l.numeroSerieLote}</span></td>
+              <td>${caducidadTexto}<br>${badgeEstado}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <button onclick="editarLote('${l.serieId}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; margin-right: 4px;">✏️</button>
+                <button onclick="eliminarLote('${l.serieId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem;">🗑️</button>
+              </td>
             `;
             tbody.appendChild(tr);
           });
@@ -778,20 +877,32 @@
 
     function abrirModalLote() {
       actualizarDesplegablesProductos();
+      document.getElementById('modal-lote-titulo').innerText = "🏷️ Registrar Nuevo Lote / Serie";
+      document.getElementById('l-serieid').value = "";
+      document.getElementById('l-numero').value = "";
+      document.getElementById('l-caducidad').value = "";
       document.getElementById('modal-lote').classList.remove('hidden');
     }
-    function cerrarModalLote() { document.getElementById('modal-lote').classList.add('hidden'); }
 
-    function abrirModalGarantia() {
+    function editarLote(serieId) {
+      var lote = todosLosLotes.find(function(l) { return l.serieId === serieId; });
+      if (!lote) return;
       actualizarDesplegablesProductos();
-      document.getElementById('modal-garantia').classList.remove('hidden');
+      document.getElementById('modal-lote-titulo').innerText = "✏️ Editar Lote / Serie";
+      document.getElementById('l-serieid').value = lote.serieId;
+      document.getElementById('l-sku').value = lote.sku;
+      document.getElementById('l-numero').value = lote.numeroSerieLote;
+      document.getElementById('l-caducidad').value = lote.caducidad ? lote.caducidad.substring(0, 10) : "";
+      document.getElementById('modal-lote').classList.remove('hidden');
     }
-    function cerrarModalGarantia() { document.getElementById('modal-garantia').classList.add('hidden'); }
+
+    function cerrarModalLote() { document.getElementById('modal-lote').classList.add('hidden'); }
 
     function guardarNuevoLote(e) {
       e.preventDefault();
       var datos = {
         action: 'guardarLote',
+        serieId: document.getElementById('l-serieid').value,
         empresaId: usuarioActual.empresaId,
         sku: document.getElementById('l-sku').value,
         numeroSerieLote: document.getElementById('l-numero').value,
@@ -799,12 +910,31 @@
       };
       apiCall(datos, function(data) {
         if (data.success) {
-          alert("¡Lote registrado con éxito!");
+          alert(data.message);
           cerrarModalLote();
           cargarLotes(usuarioActual.empresaId);
+        } else {
+          alert("Error: " + data.error);
         }
       });
     }
+
+    function eliminarLote(serieId) {
+      if (confirm("¿Estás seguro de eliminar este lote o número de serie?")) {
+        apiCall({ action: 'eliminarLote', serieId: serieId }, function(data) {
+          if (data.success) {
+            alert("Lote eliminado.");
+            cargarLotes(usuarioActual.empresaId);
+          }
+        });
+      }
+    }
+
+    function abrirModalGarantia() {
+      actualizarDesplegablesProductos();
+      document.getElementById('modal-garantia').classList.remove('hidden');
+    }
+    function cerrarModalGarantia() { document.getElementById('modal-garantia').classList.add('hidden'); }
 
     function guardarNuevaGarantia(e) {
       e.preventDefault();
