@@ -164,6 +164,7 @@
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 PDF</button>
             <button onclick="exportarCSV()" class="btn" style="width: auto; background: #0284c7;">📊 CSV</button>
+            <button onclick="abrirModalAuditoria()" class="btn" style="width: auto; background: #d97706;">📋 Auditar</button>
             <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Producto</button>
             <button onclick="abrirModalAlmacen()" class="btn" style="width: auto; background: var(--warning);">🏢 Almacén</button>
             <button onclick="abrirModalProveedor()" class="btn" style="width: auto; background: #0891b2;">🚚 Proveedor</button>
@@ -242,6 +243,21 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL AUDITORÍA DE ZONA -->
+  <div id="modal-auditoria" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; text-align: center;">
+      <h3 style="margin-bottom: 1rem; color: #d97706;">📋 Auditoría de Inventario por Zona</h3>
+      <div class="form-group"><label>Seleccione Zona a Auditar</label>
+        <select id="aud-zona" required><option value="">Seleccione Zona...</option></select>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">La auditoría registrará el arqueo físico de todos los productos localizados en la zona seleccionada.</p>
+      <div style="display: flex; gap: 1rem;">
+        <button onclick="ejecutarAuditoria()" class="btn" style="background: #d97706;">Completar Auditoría</button>
+        <button onclick="cerrarModalAuditoria()" class="btn" style="background: #64748b;">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -383,7 +399,8 @@
           <select id="m-tipo">
             <option value="COMPRA">Entrada por Compra (+)</option>
             <option value="VENTA">Salida por Venta (-)</option>
-            <option value="MERMA">Merma (-)</option>
+            <option value="DEVOLUCION">Devolución Cliente (+)</option>
+            <option value="MERMA">Merma / Rotura (-)</option>
             <option value="AJUSTE">Ajuste Manual</option>
           </select>
         </div>
@@ -600,7 +617,7 @@
             return;
           }
           data.movimientos.forEach(function(m) {
-            var badgeColor = (m.tipo === 'COMPRA') ? '#dcfce7; color: #16a34a' : '#fee2e2; color: #dc2626';
+            var badgeColor = (m.tipo === 'COMPRA' || m.tipo === 'DEVOLUCION') ? '#dcfce7; color: #16a34a' : '#fee2e2; color: #dc2626';
             var tr = document.createElement('tr');
             tr.innerHTML = `
               <td style="font-family: monospace; font-size: 0.8rem;">${m.movimientoId}</td>
@@ -656,7 +673,9 @@
 
     function actualizarDesplegableZonas() {
       var selUbi = document.getElementById('p-ubicacion');
+      var selAud = document.getElementById('aud-zona');
       selUbi.innerHTML = '<option value="">Seleccione Zona...</option>';
+      selAud.innerHTML = '<option value="">Seleccione Zona...</option>';
       
       var optGroupDef = document.createElement('optgroup');
       optGroupDef.label = "-- Zonas Predeterminadas --";
@@ -665,6 +684,7 @@
         opt.value = z;
         opt.innerText = z;
         optGroupDef.appendChild(opt);
+        selAud.innerHTML += `<option value="${z}">${z}</option>`;
       });
       selUbi.appendChild(optGroupDef);
 
@@ -676,9 +696,40 @@
           opt.value = a.nombreAlmacen;
           opt.innerText = a.nombreAlmacen;
           optGroupEmp.appendChild(opt);
+          selAud.innerHTML += `<option value="${a.nombreAlmacen}">${a.nombreAlmacen}</option>`;
         });
         selUbi.appendChild(optGroupEmp);
       }
+    }
+
+    function abrirModalAuditoria() {
+      actualizarDesplegableZonas();
+      document.getElementById('modal-auditoria').classList.remove('hidden');
+    }
+    function cerrarModalAuditoria() { document.getElementById('modal-auditoria').classList.add('hidden'); }
+
+    function ejecutarAuditoria() {
+      var zona = document.getElementById('aud-zona').value;
+      if (!zona) { alert("Seleccione una zona."); return; }
+      
+      var productosZona = todosLosProductos.filter(function(p) { return p.ubicacion === zona; });
+      var resultado = {
+        totalProductosAuditados: productosZona.length,
+        items: productosZona.map(function(p) { return { sku: p.sku, stockRegistrado: p.stockActual }; })
+      };
+
+      apiCall({
+        action: 'ejecutarAuditoriaZona',
+        empresaId: usuarioActual.empresaId,
+        zona: zona,
+        usuario: usuarioActual.nombre,
+        resultadoJson: JSON.stringify(resultado)
+      }, function(data) {
+        if (data.success) {
+          alert("¡Auditoría completada con éxito para la zona: " + zona + "!");
+          cerrarModalAuditoria();
+        }
+      });
     }
 
     function cargarProveedores(empresaId) {
