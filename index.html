@@ -14,6 +14,7 @@
       --primary-dark: #1d4ed8;
       --success: #16a34a;
       --danger: #dc2626;
+      --warning: #f59e0b;
       --text: #1e293b;
       --text-muted: #64748b;
       --bg: #f8fafc;
@@ -115,6 +116,12 @@
 
       <!-- EMPRESA PANEL -->
       <div id="panel-empresa" class="hidden">
+        
+        <!-- ALERTAS Y NOTIFICACIONES INTELIGENTES -->
+        <div id="alertas-sistema" class="hidden" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; font-weight: 500;">
+          ⚠️ <b>Atención:</b> Existen productos por debajo del stock mínimo recomendado en su inventario. Revise las alertas rojas en la tabla.
+        </div>
+
         <div class="stats-grid">
           <div class="stat-card"><h3>Total Productos</h3><p id="stat-total">0</p></div>
           <div class="stat-card" style="border-left-color: var(--success);"><h3>Valor del Inventario</h3><p id="stat-valor">0.00 €</p></div>
@@ -128,9 +135,10 @@
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 Exportar PDF</button>
-            <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Nuevo Producto</button>
-            <button onclick="abrirModalLote()" class="btn" style="width: auto; background: #f59e0b;">🏷️ Nuevo Lote</button>
-            <button onclick="abrirModalMovimiento()" class="btn" style="width: auto; background: var(--primary);">⚡ Movimiento</button>
+            <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Producto</button>
+            <button onclick="abrirModalAlmacen()" class="btn" style="width: auto; background: var(--warning);">🏢 Almacén</button>
+            <button onclick="abrirModalProveedor()" class="btn" style="width: auto; background: #0891b2;">🚚 Proveedor</button>
+            <button onclick="abrirModalMovimiento()" class="btn" style="width: auto; background: var(--primary);">⚡ Mover</button>
           </div>
         </div>
 
@@ -154,19 +162,32 @@
           </table>
         </div>
 
-        <!-- TABLA DE LOTES Y CADUCIDADES -->
-        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto; margin-bottom: 2rem;">
-          <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏷️ Control de Lotes, Series y Caducidades</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>ID Lote/Serie</th><th>SKU Asociado</th><th>Nº Lote / Serie</th><th>Caducidad</th><th>Estado</th>
-              </tr>
-            </thead>
-            <tbody id="tabla-lotes-body">
-              <tr><td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Cargando lotes...</td></tr>
-            </tbody>
-          </table>
+        <!-- TABLA DE ALMACENES -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+          <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas Físicas</h3>
+            <table>
+              <thead>
+                <tr><th>Almacén</th><th>Ubicación</th><th>Responsable</th></tr>
+              </thead>
+              <tbody id="tabla-almacenes-body">
+                <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando almacenes...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TABLA DE PROVEEDORES -->
+          <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🚚 Directorio de Proveedores</h3>
+            <table>
+              <thead>
+                <tr><th>Proveedor</th><th>Contacto</th><th>Teléfono</th></tr>
+              </thead>
+              <tbody id="tabla-proveedores-body">
+                <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando proveedores...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- TABLA DE MOVIMIENTOS RECIENTES -->
@@ -231,16 +252,32 @@
     </div>
   </div>
 
-  <div id="modal-lote" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
-    <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-      <h3 style="margin-bottom: 1.5rem; color: #f59e0b;">🏷️ Registrar Lote o Serie</h3>
-      <form onsubmit="guardarNuevoLote(event)">
-        <div class="form-group"><label>SKU del Producto Asociado</label><input type="text" id="l-sku" required placeholder="SKU-TALADRO-01"></div>
-        <div class="form-group"><label>Número de Lote o Serie</label><input type="text" id="l-serie" required placeholder="LOTE-2026-B"></div>
-        <div class="form-group"><label>Fecha de Caducidad (Opcional)</label><input type="date" id="l-caducidad"></div>
+  <div id="modal-almacen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <h3 style="margin-bottom: 1.5rem; color: var(--warning);">🏢 Nuevo Almacén o Zona</h3>
+      <form onsubmit="guardarNuevoAlmacen(event)">
+        <div class="form-group"><label>Nombre Almacén</label><input type="text" id="alm-nombre" required placeholder="Almacén Norte"></div>
+        <div class="form-group"><label>Ubicación Física</label><input type="text" id="alm-ubicacion" required placeholder="Polígono Industrial Sur"></div>
+        <div class="form-group"><label>Responsable</label><input type="text" id="alm-resp" required placeholder="Ana López"></div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <button type="submit" class="btn" style="background: #f59e0b;">Guardar Lote</button>
-          <button type="button" onclick="cerrarModalLote()" class="btn" style="background: #64748b;">Cancelar</button>
+          <button type="submit" class="btn" style="background: var(--warning);">Guardar</button>
+          <button type="button" onclick="cerrarModalAlmacen()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-proveedor" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <h3 style="margin-bottom: 1.5rem; color: #0891b2;">🚚 Nuevo Proveedor</h3>
+      <form onsubmit="guardarNuevoProveedor(event)">
+        <div class="form-group"><label>Nombre Empresa Proveedora</label><input type="text" id="prov-nombre" required placeholder="Global Tools S.L."></div>
+        <div class="form-group"><label>Persona de Contacto</label><input type="text" id="prov-contacto" required placeholder="Pedro Sánchez"></div>
+        <div class="form-group"><label>Correo Electrónico</label><input type="email" id="prov-email" required placeholder="ventas@globaltools.com"></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" id="prov-tel" required placeholder="600123456"></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: #0891b2;">Guardar</button>
+          <button type="button" onclick="cerrarModalProveedor()" class="btn" style="background: #64748b;">Cancelar</button>
         </div>
       </form>
     </div>
@@ -324,7 +361,8 @@
         cargarDatosDashboard(usuario.empresaId);
         cargarTablaProductos(usuario.empresaId);
         cargarMovimientos(usuario.empresaId);
-        cargarLotes(usuario.empresaId);
+        cargarAlmacenes(usuario.empresaId);
+        cargarProveedores(usuario.empresaId);
       }
     }
 
@@ -396,6 +434,13 @@
           document.getElementById('stat-total').innerText = data.stats.totalProductos;
           document.getElementById('stat-valor').innerText = data.stats.valorInventario + " €";
           document.getElementById('stat-alertas').innerText = data.stats.alertasStock;
+
+          // Sistema de Alertas Inteligentes
+          if (data.stats.alertasStock > 0) {
+            document.getElementById('alertas-sistema').classList.remove('hidden');
+          } else {
+            document.getElementById('alertas-sistema').classList.add('hidden');
+          }
         }
       });
     }
@@ -436,23 +481,43 @@
       });
     }
 
-    function cargarLotes(empresaId) {
-      apiCall({ action: 'listarLotes', empresaId: empresaId }, function(data) {
+    function cargarAlmacenes(empresaId) {
+      apiCall({ action: 'listarAlmacenes', empresaId: empresaId }, function(data) {
         if (data.success) {
-          var tbody = document.getElementById('tabla-lotes-body');
+          var tbody = document.getElementById('tabla-almacenes-body');
           tbody.innerHTML = '';
-          if (data.lotes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No hay lotes o series registrados.</td></tr>';
+          if (data.almacenes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">No hay almacenes registrados.</td></tr>';
             return;
           }
-          data.lotes.forEach(function(l) {
+          data.almacenes.forEach(function(a) {
             var tr = document.createElement('tr');
             tr.innerHTML = `
-              <td style="font-family: monospace; font-size: 0.8rem;">${l.serieId}</td>
-              <td style="font-weight: bold; font-family: monospace;">${l.sku}</td>
-              <td>${l.numeroSerieLote}</td>
-              <td>${l.caducidad ? new Date(l.caducidad).toLocaleDateString() : 'Sin caducidad'}</td>
-              <td><span style="background: #dcfce7; color: #16a34a; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${l.estado}</span></td>
+              <td style="font-weight: 600;">${a.nombreAlmacen}</td>
+              <td>📍 ${a.ubicacionFisica}</td>
+              <td>👤 ${a.responsable}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      });
+    }
+
+    function cargarProveedores(empresaId) {
+      apiCall({ action: 'listarProveedores', empresaId: empresaId }, function(data) {
+        if (data.success) {
+          var tbody = document.getElementById('tabla-proveedores-body');
+          tbody.innerHTML = '';
+          if (data.proveedores.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">No hay proveedores registrados.</td></tr>';
+            return;
+          }
+          data.proveedores.forEach(function(p) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="font-weight: 600;">${p.nombreProveedor}</td>
+              <td>${p.contacto} (${p.email})</td>
+              <td>📞 ${p.telefono}</td>
             `;
             tbody.appendChild(tr);
           });
@@ -496,12 +561,12 @@
 
     function abrirModalNuevoProducto() { document.getElementById('modal-producto').classList.remove('hidden'); }
     function cerrarModalProducto() { document.getElementById('modal-producto').classList.add('hidden'); }
-    
-    function abrirModalLote(sku) {
-      document.getElementById('modal-lote').classList.remove('hidden');
-      if (sku) document.getElementById('l-sku').value = sku;
-    }
-    function cerrarModalLote() { document.getElementById('modal-lote').classList.add('hidden'); }
+
+    function abrirModalAlmacen() { document.getElementById('modal-almacen').classList.remove('hidden'); }
+    function cerrarModalAlmacen() { document.getElementById('modal-almacen').classList.add('hidden'); }
+
+    function abrirModalProveedor() { document.getElementById('modal-proveedor').classList.remove('hidden'); }
+    function cerrarModalProveedor() { document.getElementById('modal-proveedor').classList.add('hidden'); }
 
     function abrirModalMovimiento(sku) {
       sku = sku || '';
@@ -532,23 +597,36 @@
       });
     }
 
-    function guardarNuevoLote(e) {
+    function guardarNuevoAlmacen(e) {
       e.preventDefault();
       var datos = {
-        action: 'guardarLote',
+        action: 'guardarAlmacen',
         empresaId: usuarioActual.empresaId,
-        sku: document.getElementById('l-sku').value,
-        numeroSerieLote: document.getElementById('l-serie').value,
-        caducidad: document.getElementById('l-caducidad').value
+        nombreAlmacen: document.getElementById('alm-nombre').value,
+        ubicacionFisica: document.getElementById('alm-ubicacion').value,
+        responsable: document.getElementById('alm-resp').value
       };
-      apiCall(datos, function(data) {
-        if (data.success) {
-          alert("Lote/Serie registrado correctamente.");
-          cerrarModalLote();
-          cargarLotes(usuarioActual.empresaId);
-        } else {
-          alert("Error al registrar el lote.");
-        }
+      apiCall(datos, function() {
+        alert("Almacén registrado con éxito.");
+        cerrarModalAlmacen();
+        cargarAlmacenes(usuarioActual.empresaId);
+      });
+    }
+
+    function guardarNuevoProveedor(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'guardarProveedor',
+        empresaId: usuarioActual.empresaId,
+        nombreProveedor: document.getElementById('prov-nombre').value,
+        contacto: document.getElementById('prov-contacto').value,
+        email: document.getElementById('prov-email').value,
+        telefono: document.getElementById('prov-tel').value
+      };
+      apiCall(datos, function() {
+        alert("Proveedor registrado con éxito.");
+        cerrarModalProveedor();
+        cargarProveedores(usuarioActual.empresaId);
       });
     }
 
