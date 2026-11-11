@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
   <style>
     :root {
@@ -58,6 +59,12 @@
     
     .filter-tab { padding: 6px 12px; background: #e2e8f0; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; color: var(--text); }
     .filter-tab.active { background: var(--primary); color: #fff; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #etiqueta-impresion, #etiqueta-impresion * { visibility: visible; }
+      #etiqueta-impresion { position: absolute; left: 0; top: 0; width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -182,7 +189,7 @@
           <table>
             <thead>
               <tr>
-                <th>SKU / Código</th><th>Producto</th><th>Categoría</th><th>Ubicación</th><th>Stock Actual</th><th>Precio Coste</th><th>PVP</th><th>Estado</th><th style="text-align: center;">Acciones</th>
+                <th>SKU / Código</th><th>Producto</th><th>Categoría</th><th>Ubicación / Zona</th><th>Stock Actual</th><th>Precio Coste</th><th>PVP</th><th>Estado</th><th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
             <tbody id="tabla-productos-body">
@@ -194,7 +201,7 @@
         <!-- TABLA DE ALMACENES, PROVEEDORES Y ÓRDENES -->
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
-            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes</h3>
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas</h3>
             <table>
               <thead><tr><th>Almacén</th><th>Ubicación</th></tr></thead>
               <tbody id="tabla-almacenes-body"><tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
@@ -237,7 +244,23 @@
     </div>
   </div>
 
-  <!-- MODALES -->
+  <!-- MODAL IMPRESIÓN ETIQUETA BARCODE -->
+  <div id="modal-etiqueta" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; text-align: center;">
+      <h3 style="margin-bottom: 1rem; color: var(--primary);">🏷️ Etiqueta de Producto</h3>
+      <div id="etiqueta-impresion" style="border: 2px dashed #cbd5e1; padding: 1.5rem; border-radius: 8px; background: #fff; margin-bottom: 1.5rem;">
+        <h4 id="lbl-prod-nombre" style="font-size: 1.1rem; color: var(--text);">Nombre Producto</h4>
+        <p id="lbl-prod-pvp" style="font-weight: 800; font-size: 1.3rem; color: var(--primary); margin: 0.5rem 0;">0.00 €</p>
+        <svg id="barcode-canvas"></svg>
+      </div>
+      <div style="display: flex; gap: 1rem;">
+        <button onclick="window.print()" class="btn" style="background: var(--success);">🖨️ Imprimir Etiqueta</button>
+        <button onclick="cerrarModalEtiqueta()" class="btn" style="background: #64748b;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALES EXPOSICIÓN -->
   <div id="modal-empresa" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nueva Empresa</h3>
@@ -264,7 +287,9 @@
         <div class="form-group"><label>SKU / Código</label><input type="text" id="p-sku" required placeholder="PROD-001"></div>
         <div class="form-group"><label>Nombre</label><input type="text" id="p-nombre" required placeholder="Taladro 18V"></div>
         <div class="form-group"><label>Categoría</label><input type="text" id="p-categoria" placeholder="Herramientas"></div>
-        <div class="form-group"><label>Ubicación</label><input type="text" id="p-ubicacion" placeholder="Estantería 3"></div>
+        <div class="form-group"><label>Ubicación / Zona</label>
+          <select id="p-ubicacion" required><option value="">Seleccione Zona...</option></select>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group"><label>Stock Actual</label><input type="number" id="p-stock" value="0" min="0" required></div>
           <div class="form-group"><label>Stock Mínimo</label><input type="number" id="p-minimo" value="5" min="0" required></div>
@@ -285,7 +310,7 @@
     <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 style="margin-bottom: 1.5rem; color: var(--warning);">🏢 Nuevo Almacén o Zona</h3>
       <form onsubmit="guardarNuevoAlmacen(event)">
-        <div class="form-group"><label>Nombre Almacén</label><input type="text" id="alm-nombre" required placeholder="Almacén Norte"></div>
+        <div class="form-group"><label>Nombre Almacén / Zona</label><input type="text" id="alm-nombre" required placeholder="Almacén Norte / Zona C"></div>
         <div class="form-group"><label>Ubicación Física</label><input type="text" id="alm-ubicacion" required placeholder="Polígono Industrial Sur"></div>
         <div class="form-group"><label>Responsable</label><input type="text" id="alm-resp" required placeholder="Ana López"></div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
@@ -360,9 +385,13 @@
     var html5QrcodeScanner = null;
     var todosLosProductos = [];
     var todosLosProveedores = [];
+    var todosLosAlmacenes = [];
     var usuarioActual = null;
     var chartInstancia = null;
     var filtroEstadoActual = 'TODOS';
+
+    // Zonas Predeterminadas Globales del Sistema
+    var zonasPredeterminadas = ["Estantería 1", "Estantería 2", "Zona A - Recepción", "Zona B - Almacén Central", "Zona C - Envíos"];
 
     function apiCall(params, callback) {
       var callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
@@ -576,19 +605,48 @@
     function cargarAlmacenes(empresaId) {
       apiCall({ action: 'listarAlmacenes', empresaId: empresaId }, function(data) {
         if (data.success) {
+          todosLosAlmacenes = data.almacenes;
           var tbody = document.getElementById('tabla-almacenes-body');
           tbody.innerHTML = '';
           if (data.almacenes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin almacenes.</td></tr>';
-            return;
+            tbody.innerHTML = '<tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin almacenes creados.</td></tr>';
+          } else {
+            data.almacenes.forEach(function(a) {
+              var tr = document.createElement('tr');
+              tr.innerHTML = `<td style="font-weight: 600;">${a.nombreAlmacen}</td><td>📍 ${a.ubicacionFisica}</td>`;
+              tbody.appendChild(tr);
+            });
           }
-          data.almacenes.forEach(function(a) {
-            var tr = document.createElement('tr');
-            tr.innerHTML = `<td style="font-weight: 600;">${a.nombreAlmacen}</td><td>📍 ${a.ubicacionFisica}</td>`;
-            tbody.appendChild(tr);
-          });
+          actualizarDesplegableZonas();
         }
       });
+    }
+
+    function actualizarDesplegableZonas() {
+      var selUbi = document.getElementById('p-ubicacion');
+      selUbi.innerHTML = '<option value="">Seleccione Zona...</option>';
+      
+      var optGroupDef = document.createElement('optgroup');
+      optGroupDef.label = "-- Zonas Predeterminadas --";
+      zonasPredeterminadas.forEach(function(z) {
+        var opt = document.createElement('option');
+        opt.value = z;
+        opt.innerText = z;
+        optGroupDef.appendChild(opt);
+      });
+      selUbi.appendChild(optGroupDef);
+
+      if (todosLosAlmacenes.length > 0) {
+        var optGroupEmp = document.createElement('optgroup');
+        optGroupEmp.label = "-- Zonas de tu Empresa --";
+        todosLosAlmacenes.forEach(function(a) {
+          var opt = document.createElement('option');
+          opt.value = a.nombreAlmacen;
+          opt.innerText = a.nombreAlmacen + " (" + a.ubicacionFisica + ")";
+          optGroupEmp.appendChild(opt);
+        });
+        selUbi.appendChild(optGroupEmp);
+      }
     }
 
     function cargarProveedores(empresaId) {
@@ -718,6 +776,7 @@
           <td>${parseFloat(p.precioVenta || 0).toFixed(2)} €</td>
           <td>${estadoBadge}</td>
           <td style="text-align: center; white-space: nowrap;">
+            <button onclick="imprimirEtiqueta('${p.sku}')" style="background: #fef08a; color: #854d0e; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;">🏷️ Etiqueta</button>
             <button onclick="editarProducto('${p.id}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;">✏️ Editar</button>
             <button onclick="eliminarProducto('${p.id}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️</button>
           </td>
@@ -726,11 +785,23 @@
       });
     }
 
+    function imprimirEtiqueta(sku) {
+      var prod = todosLosProductos.find(function(p) { return p.sku === sku; });
+      if (!prod) return;
+      document.getElementById('lbl-prod-nombre').innerText = prod.nombre;
+      document.getElementById('lbl-prod-pvp').innerText = parseFloat(prod.precioVenta || 0).toFixed(2) + " €";
+      JsBarcode("#barcode-canvas", prod.sku, { format: "CODE128", width: 2, height: 50, displayValue: true });
+      document.getElementById('modal-etiqueta').classList.remove('hidden');
+    }
+
+    function cerrarModalEtiqueta() { document.getElementById('modal-etiqueta').classList.add('hidden'); }
+
     function filtrarTabla() {
       renderizarTabla(todosLosProductos);
     }
 
     function abrirModalNuevoProducto() {
+      actualizarDesplegableZonas();
       document.getElementById('modal-producto-titulo').innerText = "+ Registrar Nuevo Producto";
       document.getElementById('p-id').value = "";
       document.getElementById('p-sku').value = "";
@@ -747,6 +818,7 @@
     function editarProducto(id) {
       var prod = todosLosProductos.find(function(p) { return p.id === id; });
       if (!prod) return;
+      actualizarDesplegableZonas();
       document.getElementById('modal-producto-titulo').innerText = "✏️ Editar Producto";
       document.getElementById('p-id').value = prod.id;
       document.getElementById('p-sku').value = prod.sku;
@@ -829,7 +901,7 @@
         responsable: document.getElementById('alm-resp').value
       };
       apiCall(datos, function() {
-        alert("Almacén registrado con éxito.");
+        alert("Almacén / Zona registrado con éxito.");
         cerrarModalAlmacen();
         cargarAlmacenes(usuarioActual.empresaId);
       });
