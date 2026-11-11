@@ -46,10 +46,10 @@
     .dash-header { background: #1e293b; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
     .dash-content { padding: 1.5rem; overflow-y: auto; flex: 1; background: #f1f5f9; }
     
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
     .stat-card { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 4px solid var(--primary); }
     .stat-card h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-card p { font-size: 1.8rem; font-weight: 700; color: var(--text); margin-top: 0.5rem; }
+    .stat-card p { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-top: 0.5rem; }
     
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
     th { background: #f8fafc; border-bottom: 2px solid var(--border); color: var(--text-muted); padding: 1rem; }
@@ -118,25 +118,28 @@
       <div id="panel-empresa" class="hidden">
         
         <div id="alertas-sistema" class="hidden" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; font-weight: 500;">
-          ⚠️ <b>Atención:</b> Existen productos por debajo del stock mínimo recomendado en su inventario.
+          ⚠️ <b>Atención:</b> Existen productos por debajo del stock mínimo recomendado. Puede generar una Orden de Compra rápida abajo.
         </div>
 
         <div class="stats-grid">
           <div class="stat-card"><h3>Total Productos</h3><p id="stat-total">0</p></div>
-          <div class="stat-card" style="border-left-color: var(--success);"><h3>Valor del Inventario</h3><p id="stat-valor">0.00 €</p></div>
-          <div class="stat-card" style="border-left-color: var(--danger);"><h3>Alertas Stock Mínimo</h3><p id="stat-alertas">0</p></div>
+          <div class="stat-card" style="border-left-color: var(--success);"><h3>Valor Coste</h3><p id="stat-valor">0.00 €</p></div>
+          <div class="stat-card" style="border-left-color: #0891b2;"><h3>Valor Venta (PVP)</h3><p id="stat-venta">0.00 €</p></div>
+          <div class="stat-card" style="border-left-color: var(--warning);"><h3>Margen Beneficio</h3><p id="stat-margen">0.00 €</p></div>
+          <div class="stat-card" style="border-left-color: var(--danger);"><h3>Stock Bajo</h3><p id="stat-alertas">0</p></div>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <div style="display: flex; gap: 0.5rem; flex: 1; max-width: 500px;">
             <input type="text" id="buscador-input" placeholder="🔍 Buscar por SKU o Nombre..." oninput="filtrarTabla()" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff;">
-            <button onclick="iniciarEscanerCamara()" class="btn" style="width: auto; background: #8b5cf6; white-space: nowrap;">📷 Escanear QR</button>
+            <button onclick="iniciarEscanerCamara()" class="btn" style="width: auto; background: #8b5cf6; white-space: nowrap;">📷 Escanear</button>
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 Exportar PDF</button>
+            <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 PDF</button>
             <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Producto</button>
             <button onclick="abrirModalAlmacen()" class="btn" style="width: auto; background: var(--warning);">🏢 Almacén</button>
             <button onclick="abrirModalProveedor()" class="btn" style="width: auto; background: #0891b2;">🚚 Proveedor</button>
+            <button onclick="abrirModalOrden()" class="btn" style="width: auto; background: #9333ea;">📦 Pedido</button>
             <button onclick="abrirModalMovimiento()" class="btn" style="width: auto; background: var(--primary);">⚡ Mover</button>
           </div>
         </div>
@@ -161,29 +164,29 @@
           </table>
         </div>
 
-        <!-- TABLA DE ALMACENES Y PROVEEDORES -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- TABLA DE ALMACENES, PROVEEDORES Y ÓRDENES -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
-            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas Físicas</h3>
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes</h3>
             <table>
-              <thead>
-                <tr><th>Almacén</th><th>Ubicación</th><th style="text-align: center;">Acción</th></tr>
-              </thead>
-              <tbody id="tabla-almacenes-body">
-                <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr>
-              </tbody>
+              <thead><tr><th>Almacén</th><th>Ubicación</th></tr></thead>
+              <tbody id="tabla-almacenes-body"><tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
             </table>
           </div>
 
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🚚 Proveedores</h3>
             <table>
-              <thead>
-                <tr><th>Proveedor</th><th>Contacto</th><th style="text-align: center;">Acción</th></tr>
-              </thead>
-              <tbody id="tabla-proveedores-body">
-                <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr>
-              </tbody>
+              <thead><tr><th>Proveedor</th><th>Contacto</th></tr></thead>
+              <tbody id="tabla-proveedores-body"><tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+
+          <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📦 Órdenes de Compra</h3>
+            <table>
+              <thead><tr><th>SKU</th><th>Cant.</th><th>Estado</th></tr></thead>
+              <tbody id="tabla-ordenes-body"><tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -282,6 +285,21 @@
     </div>
   </div>
 
+  <div id="modal-orden" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <h3 style="margin-bottom: 1.5rem; color: #9333ea;">📦 Nueva Orden de Compra</h3>
+      <form onsubmit="guardarNuevaOrden(event)">
+        <div class="form-group"><label>Proveedor</label><input type="text" id="ord-prov" required placeholder="Herramientas Globales S.A."></div>
+        <div class="form-group"><label>SKU del Producto</label><input type="text" id="ord-sku" required placeholder="SKU-001"></div>
+        <div class="form-group"><label>Cantidad a Pedir</label><input type="number" id="ord-cant" value="10" min="1" required></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: #9333ea;">Crear Pedido</button>
+          <button type="button" onclick="cerrarModalOrden()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="modal-movimiento" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 style="margin-bottom: 1.5rem; color: var(--primary);">⚡ Registrar Movimiento</h3>
@@ -362,6 +380,7 @@
         cargarMovimientos(usuario.empresaId);
         cargarAlmacenes(usuario.empresaId);
         cargarProveedores(usuario.empresaId);
+        cargarOrdenes(usuario.empresaId);
       }
     }
 
@@ -371,7 +390,7 @@
           var tbody = document.getElementById('tabla-empresas-body');
           tbody.innerHTML = '';
           if (data.empresas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay empresas registradas todavía.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">No hay empresas registradas.</td></tr>';
             return;
           }
           data.empresas.forEach(function(emp) {
@@ -420,8 +439,6 @@
           if (data.success) {
             alert("Empresa eliminada.");
             cargarEmpresasSaaS();
-          } else {
-            alert("Error al eliminar.");
           }
         });
       }
@@ -432,6 +449,8 @@
         if (data.success) {
           document.getElementById('stat-total').innerText = data.stats.totalProductos;
           document.getElementById('stat-valor').innerText = data.stats.valorInventario + " €";
+          document.getElementById('stat-venta').innerText = data.stats.valorVenta + " €";
+          document.getElementById('stat-margen').innerText = data.stats.margenEstimado + " €";
           document.getElementById('stat-alertas').innerText = data.stats.alertasStock;
 
           if (data.stats.alertasStock > 0) {
@@ -458,7 +477,7 @@
           var tbody = document.getElementById('tabla-movimientos-body');
           tbody.innerHTML = '';
           if (data.movimientos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No hay movimientos registrados todavía.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No hay movimientos.</td></tr>';
             return;
           }
           data.movimientos.forEach(function(m) {
@@ -485,16 +504,12 @@
           var tbody = document.getElementById('tabla-almacenes-body');
           tbody.innerHTML = '';
           if (data.almacenes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">No hay almacenes registrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin almacenes.</td></tr>';
             return;
           }
           data.almacenes.forEach(function(a) {
             var tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td style="font-weight: 600;">${a.nombreAlmacen}<br><span style="font-size:0.75rem; color:var(--text-muted);">Resp: ${a.responsable}</span></td>
-              <td>📍 ${a.ubicacionFisica}</td>
-              <td style="text-align: center;"><button onclick="eliminarAlmacen('${a.almacenId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️</button></td>
-            `;
+            tr.innerHTML = `<td style="font-weight: 600;">${a.nombreAlmacen}</td><td>📍 ${a.ubicacionFisica}</td>`;
             tbody.appendChild(tr);
           });
         }
@@ -507,15 +522,33 @@
           var tbody = document.getElementById('tabla-proveedores-body');
           tbody.innerHTML = '';
           if (data.proveedores.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">No hay proveedores registrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin proveedores.</td></tr>';
             return;
           }
           data.proveedores.forEach(function(p) {
             var tr = document.createElement('tr');
+            tr.innerHTML = `<td style="font-weight: 600;">${p.nombreProveedor}</td><td>${p.contacto}</td>`;
+            tbody.appendChild(tr);
+          });
+        }
+      });
+    }
+
+    function cargarOrdenes(empresaId) {
+      apiCall({ action: 'listarOrdenes', empresaId: empresaId }, function(data) {
+        if (data.success) {
+          var tbody = document.getElementById('tabla-ordenes-body');
+          tbody.innerHTML = '';
+          if (data.ordenes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin pedidos.</td></tr>';
+            return;
+          }
+          data.ordenes.forEach(function(o) {
+            var tr = document.createElement('tr');
             tr.innerHTML = `
-              <td style="font-weight: 600;">${p.nombreProveedor}<br><span style="font-size:0.75rem; color:var(--text-muted);">📞 ${p.telefono}</span></td>
-              <td>${p.contacto}</td>
-              <td style="text-align: center;"><button onclick="eliminarProveedor('${p.proveedorId}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️</button></td>
+              <td style="font-family: monospace; font-weight: bold;">${o.sku}</td>
+              <td><b>${o.cantidad}</b></td>
+              <td><span style="background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.7rem;">${o.estado}</span></td>
             `;
             tbody.appendChild(tr);
           });
@@ -599,8 +632,6 @@
             alert("Producto eliminado.");
             cargarTablaProductos(usuarioActual.empresaId);
             cargarDatosDashboard(usuarioActual.empresaId);
-          } else {
-            alert("Error al eliminar.");
           }
         });
       }
@@ -609,24 +640,11 @@
     function abrirModalAlmacen() { document.getElementById('modal-almacen').classList.remove('hidden'); }
     function cerrarModalAlmacen() { document.getElementById('modal-almacen').classList.add('hidden'); }
 
-    function eliminarAlmacen(id) {
-      if (confirm("¿Eliminar este almacén?")) {
-        apiCall({ action: 'eliminarAlmacen', almacenId: id }, function(data) {
-          if (data.success) { cargarAlmacenes(usuarioActual.empresaId); }
-        });
-      }
-    }
-
     function abrirModalProveedor() { document.getElementById('modal-proveedor').classList.remove('hidden'); }
     function cerrarModalProveedor() { document.getElementById('modal-proveedor').classList.add('hidden'); }
 
-    function eliminarProveedor(id) {
-      if (confirm("¿Eliminar este proveedor?")) {
-        apiCall({ action: 'eliminarProveedor', proveedorId: id }, function(data) {
-          if (data.success) { cargarProveedores(usuarioActual.empresaId); }
-        });
-      }
-    }
+    function abrirModalOrden() { document.getElementById('modal-orden').classList.remove('hidden'); }
+    function cerrarModalOrden() { document.getElementById('modal-orden').classList.add('hidden'); }
 
     function abrirModalMovimiento(sku) {
       sku = sku || '';
@@ -656,8 +674,6 @@
           cerrarModalProducto();
           cargarTablaProductos(usuarioActual.empresaId);
           cargarDatosDashboard(usuarioActual.empresaId);
-        } else {
-          alert("Error al guardar.");
         }
       });
     }
@@ -692,6 +708,22 @@
         alert("Proveedor registrado con éxito.");
         cerrarModalProveedor();
         cargarProveedores(usuarioActual.empresaId);
+      });
+    }
+
+    function guardarNuevaOrden(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'crearOrdenCompra',
+        empresaId: usuarioActual.empresaId,
+        proveedor: document.getElementById('ord-prov').value,
+        sku: document.getElementById('ord-sku').value,
+        cantidad: document.getElementById('ord-cant').value
+      };
+      apiCall(datos, function() {
+        alert("Orden de compra creada.");
+        cerrarModalOrden();
+        cargarOrdenes(usuarioActual.empresaId);
       });
     }
 
