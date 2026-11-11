@@ -168,6 +168,7 @@
             <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 PDF</button>
             <button onclick="exportarCSV()" class="btn" style="width: auto; background: #0284c7;">📊 CSV</button>
             <button onclick="abrirModalAuditoria()" class="btn" style="width: auto; background: #d97706;">📋 Auditar</button>
+            <button onclick="abrirModalTraspaso()" class="btn" style="width: auto; background: #0891b2;">⇄ Traspasar</button>
             <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Producto</button>
             <button onclick="abrirModalAlmacen()" class="btn" style="width: auto; background: var(--warning);">🏢 Almacén</button>
             <button onclick="abrirModalProveedor()" class="btn" style="width: auto; background: #0891b2;">🚚 Proveedor</button>
@@ -203,7 +204,7 @@
           </table>
         </div>
 
-        <!-- TABLA DE ALMACENES, PROVEEDORES Y ÓRDENES -->
+        <!-- TABLA DE ALMACENES, PROVEEDORES Y LOTES -->
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas</h3>
@@ -222,10 +223,10 @@
           </div>
 
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
-            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📦 Órdenes de Compra</h3>
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏷️ Control de Lotes / Series</h3>
             <table>
-              <thead><tr><th>SKU</th><th>Cant.</th><th style="text-align: center;">Acción</th></tr></thead>
-              <tbody id="tabla-ordenes-body"><tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
+              <thead><tr><th>SKU</th><th>Lote / Serie</th><th>Estado</th></tr></thead>
+              <tbody id="tabla-lotes-body"><tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando lotes...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -246,6 +247,26 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL TRASPASO DE ZONA -->
+  <div id="modal-traspaso" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px;">
+      <h3 style="margin-bottom: 1.5rem; color: #0891b2;">⇄ Traspaso de Mercancía entre Zonas</h3>
+      <form onsubmit="ejecutarTraspaso(event)">
+        <div class="form-group"><label>Producto (SKU)</label>
+          <select id="tr-sku" required><option value="">Seleccione Producto...</option></select>
+        </div>
+        <div class="form-group"><label>Zona Destino</label>
+          <select id="tr-destino" required><option value="">Seleccione Zona Destino...</option></select>
+        </div>
+        <div class="form-group"><label>Cantidad a Traspasar</label><input type="number" id="tr-cant" value="1" min="1" required></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: #0891b2;">Confirmar Traspaso</button>
+          <button type="button" onclick="cerrarModalTraspaso()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -483,6 +504,7 @@
         cargarAlmacenes(usuario.empresaId);
         cargarProveedores(usuario.empresaId);
         cargarOrdenes(usuario.empresaId);
+        cargarLotes(usuario.empresaId);
       }
     }
 
@@ -623,6 +645,7 @@
           }
           data.movimientos.forEach(function(m) {
             var badgeColor = (m.tipo === 'COMPRA' || m.tipo === 'DEVOLUCION') ? '#dcfce7; color: #16a34a' : '#fee2e2; color: #dc2626';
+            if (m.tipo === 'TRASPASO') badgeColor = '#e0e7ff; color: #4338ca';
             var tr = document.createElement('tr');
             tr.innerHTML = `
               <td style="font-family: monospace; font-size: 0.8rem;">${m.movimientoId}</td>
@@ -632,6 +655,28 @@
               <td>${m.ubicacion}</td>
               <td>${new Date(m.fechaHora).toLocaleString()}</td>
               <td style="font-size: 0.85rem; color: var(--text-muted);">${m.usuario}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      });
+    }
+
+    function cargarLotes(empresaId) {
+      apiCall({ action: 'listarLotes', empresaId: empresaId }, function(data) {
+        if (data.success) {
+          var tbody = document.getElementById('tabla-lotes-body');
+          tbody.innerHTML = '';
+          if (data.lotes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin lotes registrados.</td></tr>';
+            return;
+          }
+          data.lotes.forEach(function(l) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="font-family: monospace; font-weight: bold;">${l.sku}</td>
+              <td>${l.numeroSerieLote}</td>
+              <td><span style="background: #dcfce7; color: #16a34a; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.7rem;">${l.estado}</span></td>
             `;
             tbody.appendChild(tr);
           });
@@ -683,8 +728,11 @@
     function actualizarDesplegableZonas() {
       var selUbi = document.getElementById('p-ubicacion');
       var selAud = document.getElementById('aud-zona');
+      var selTrDest = document.getElementById('tr-destino');
+      
       selUbi.innerHTML = '<option value="">Seleccione Zona...</option>';
       selAud.innerHTML = '<option value="">Seleccione Zona...</option>';
+      selTrDest.innerHTML = '<option value="">Seleccione Zona Destino...</option>';
       
       var optGroupDef = document.createElement('optgroup');
       optGroupDef.label = "-- Zonas Predeterminadas --";
@@ -694,6 +742,7 @@
         opt.innerText = z;
         optGroupDef.appendChild(opt);
         selAud.innerHTML += `<option value="${z}">${z}</option>`;
+        selTrDest.innerHTML += `<option value="${z}">${z}</option>`;
       });
       selUbi.appendChild(optGroupDef);
 
@@ -706,6 +755,7 @@
           opt.innerText = a.nombreAlmacen;
           optGroupEmp.appendChild(opt);
           selAud.innerHTML += `<option value="${a.nombreAlmacen}">${a.nombreAlmacen}</option>`;
+          selTrDest.innerHTML += `<option value="${a.nombreAlmacen}">${a.nombreAlmacen}</option>`;
         });
         selUbi.appendChild(optGroupEmp);
       }
@@ -716,6 +766,41 @@
       document.getElementById('modal-auditoria').classList.remove('hidden');
     }
     function cerrarModalAuditoria() { document.getElementById('modal-auditoria').classList.add('hidden'); }
+
+    function abrirModalTraspaso() {
+      actualizarDesplegablesProductos();
+      actualizarDesplegableZonas();
+      document.getElementById('modal-traspaso').classList.remove('hidden');
+    }
+    function cerrarModalTraspaso() { document.getElementById('modal-traspaso').classList.add('hidden'); }
+
+    function ejecutarTraspaso(e) {
+      e.preventDefault();
+      var sku = document.getElementById('tr-sku').value;
+      var destino = document.getElementById('tr-destino').value;
+      var cantidad = document.getElementById('tr-cant').value;
+      var prod = todosLosProductos.find(function(p) { return p.sku === sku; });
+      if (!prod) return;
+
+      apiCall({
+        action: 'traspasarStock',
+        empresaId: usuarioActual.empresaId,
+        sku: sku,
+        zonaOrigen: prod.ubicacion || 'General',
+        zonaDestino: destino,
+        cantidad: cantidad,
+        usuario: usuarioActual.nombre
+      }, function(data) {
+        if (data.success) {
+          alert(data.message);
+          cerrarModalTraspaso();
+          cargarTablaProductos(usuarioActual.empresaId);
+          cargarMovimientos(usuarioActual.empresaId);
+        } else {
+          alert("Error: " + data.error);
+        }
+      });
+    }
 
     function ejecutarAuditoria() {
       var zona = document.getElementById('aud-zona').value;
@@ -834,13 +919,17 @@
     function actualizarDesplegablesProductos() {
       var selOrd = document.getElementById('ord-sku');
       var selMov = document.getElementById('m-sku');
+      var selTr = document.getElementById('tr-sku');
+      
       selOrd.innerHTML = '<option value="">Seleccione Producto...</option>';
       selMov.innerHTML = '<option value="">Seleccione Producto...</option>';
+      if (selTr) selTr.innerHTML = '<option value="">Seleccione Producto...</option>';
       
       todosLosProductos.forEach(function(p) {
         var opt = `<option value="${p.sku}">${p.sku} - ${p.nombre}</option>`;
         selOrd.innerHTML += opt;
         selMov.innerHTML += opt;
+        if (selTr) selTr.innerHTML += opt;
       });
     }
 
