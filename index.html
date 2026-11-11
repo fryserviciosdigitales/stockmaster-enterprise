@@ -129,6 +129,7 @@
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 Exportar PDF</button>
             <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Nuevo Producto</button>
+            <button onclick="abrirModalLote()" class="btn" style="width: auto; background: #f59e0b;">🏷️ Nuevo Lote</button>
             <button onclick="abrirModalMovimiento()" class="btn" style="width: auto; background: var(--primary);">⚡ Movimiento</button>
           </div>
         </div>
@@ -149,6 +150,21 @@
             </thead>
             <tbody id="tabla-productos-body">
               <tr><td colspan="9" style="padding: 2rem; text-align: center; color: var(--text-muted);">Cargando catálogo...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABLA DE LOTES Y CADUCIDADES -->
+        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto; margin-bottom: 2rem;">
+          <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏷️ Control de Lotes, Series y Caducidades</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>ID Lote/Serie</th><th>SKU Asociado</th><th>Nº Lote / Serie</th><th>Caducidad</th><th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-lotes-body">
+              <tr><td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Cargando lotes...</td></tr>
             </tbody>
           </table>
         </div>
@@ -210,6 +226,21 @@
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn" style="background: var(--success);">Guardar</button>
           <button type="button" onclick="cerrarModalProducto()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-lote" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <h3 style="margin-bottom: 1.5rem; color: #f59e0b;">🏷️ Registrar Lote o Serie</h3>
+      <form onsubmit="guardarNuevoLote(event)">
+        <div class="form-group"><label>SKU del Producto Asociado</label><input type="text" id="l-sku" required placeholder="SKU-TALADRO-01"></div>
+        <div class="form-group"><label>Número de Lote o Serie</label><input type="text" id="l-serie" required placeholder="LOTE-2026-B"></div>
+        <div class="form-group"><label>Fecha de Caducidad (Opcional)</label><input type="date" id="l-caducidad"></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: #f59e0b;">Guardar Lote</button>
+          <button type="button" onclick="cerrarModalLote()" class="btn" style="background: #64748b;">Cancelar</button>
         </div>
       </form>
     </div>
@@ -293,6 +324,7 @@
         cargarDatosDashboard(usuario.empresaId);
         cargarTablaProductos(usuario.empresaId);
         cargarMovimientos(usuario.empresaId);
+        cargarLotes(usuario.empresaId);
       }
     }
 
@@ -404,6 +436,30 @@
       });
     }
 
+    function cargarLotes(empresaId) {
+      apiCall({ action: 'listarLotes', empresaId: empresaId }, function(data) {
+        if (data.success) {
+          var tbody = document.getElementById('tabla-lotes-body');
+          tbody.innerHTML = '';
+          if (data.lotes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No hay lotes o series registrados.</td></tr>';
+            return;
+          }
+          data.lotes.forEach(function(l) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="font-family: monospace; font-size: 0.8rem;">${l.serieId}</td>
+              <td style="font-weight: bold; font-family: monospace;">${l.sku}</td>
+              <td>${l.numeroSerieLote}</td>
+              <td>${l.caducidad ? new Date(l.caducidad).toLocaleDateString() : 'Sin caducidad'}</td>
+              <td><span style="background: #dcfce7; color: #16a34a; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${l.estado}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      });
+    }
+
     function renderizarTabla(lista) {
       var tbody = document.getElementById('tabla-productos-body');
       tbody.innerHTML = '';
@@ -440,6 +496,13 @@
 
     function abrirModalNuevoProducto() { document.getElementById('modal-producto').classList.remove('hidden'); }
     function cerrarModalProducto() { document.getElementById('modal-producto').classList.add('hidden'); }
+    
+    function abrirModalLote(sku) {
+      document.getElementById('modal-lote').classList.remove('hidden');
+      if (sku) document.getElementById('l-sku').value = sku;
+    }
+    function cerrarModalLote() { document.getElementById('modal-lote').classList.add('hidden'); }
+
     function abrirModalMovimiento(sku) {
       sku = sku || '';
       document.getElementById('modal-movimiento').classList.remove('hidden');
@@ -466,6 +529,26 @@
         cerrarModalProducto();
         cargarTablaProductos(usuarioActual.empresaId);
         cargarDatosDashboard(usuarioActual.empresaId);
+      });
+    }
+
+    function guardarNuevoLote(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'guardarLote',
+        empresaId: usuarioActual.empresaId,
+        sku: document.getElementById('l-sku').value,
+        numeroSerieLote: document.getElementById('l-serie').value,
+        caducidad: document.getElementById('l-caducidad').value
+      };
+      apiCall(datos, function(data) {
+        if (data.success) {
+          alert("Lote/Serie registrado correctamente.");
+          cerrarModalLote();
+          cargarLotes(usuarioActual.empresaId);
+        } else {
+          alert("Error al registrar el lote.");
+        }
       });
     }
 
