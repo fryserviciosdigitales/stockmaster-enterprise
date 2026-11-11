@@ -169,6 +169,7 @@
             <button onclick="exportarCSV()" class="btn" style="width: auto; background: #0284c7;">📊 CSV</button>
             <button onclick="abrirModalAuditoria()" class="btn" style="width: auto; background: #d97706;">📋 Auditar</button>
             <button onclick="abrirModalTraspaso()" class="btn" style="width: auto; background: #0891b2;">⇄ Traspasar</button>
+            <button onclick="abrirModalLote()" class="btn" style="width: auto; background: #6366f1;">🏷️ Lote</button>
             <button onclick="abrirModalNuevoProducto()" class="btn" style="width: auto; background: var(--success);">+ Producto</button>
             <button onclick="abrirModalAlmacen()" class="btn" style="width: auto; background: var(--warning);">🏢 Almacén</button>
             <button onclick="abrirModalProveedor()" class="btn" style="width: auto; background: #0891b2;">🚚 Proveedor</button>
@@ -204,8 +205,8 @@
           </table>
         </div>
 
-        <!-- TABLA DE ALMACENES, PROVEEDORES Y LOTES -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- 4 PANELES INFERIORES RECUPERADOS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
             <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏢 Almacenes y Zonas</h3>
             <table>
@@ -223,9 +224,17 @@
           </div>
 
           <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
-            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏷️ Control de Lotes / Series</h3>
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">📦 Órdenes de Compra</h3>
             <table>
-              <thead><tr><th>SKU</th><th>Lote / Serie</th><th>Estado</th></tr></thead>
+              <thead><tr><th>SKU</th><th>Cant.</th><th style="text-align: center;">Acción</th></tr></thead>
+              <tbody id="tabla-ordenes-body"><tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+
+          <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow-x: auto;">
+            <h3 style="padding: 1rem; font-size: 1rem; border-bottom: 1px solid var(--border); background: #f8fafc;">🏷️ Control de Lotes</h3>
+            <table>
+              <thead><tr><th>SKU</th><th>Lote</th><th>Estado</th></tr></thead>
               <tbody id="tabla-lotes-body"><tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Cargando lotes...</td></tr></tbody>
             </table>
           </div>
@@ -247,6 +256,24 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL REGISTRO DE LOTE -->
+  <div id="modal-lote" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px;">
+      <h3 style="margin-bottom: 1.5rem; color: #6366f1;">🏷️ Registrar Nuevo Lote / Serie</h3>
+      <form onsubmit="guardarNuevoLote(event)">
+        <div class="form-group"><label>Producto (SKU)</label>
+          <select id="l-sku" required><option value="">Seleccione Producto...</option></select>
+        </div>
+        <div class="form-group"><label>Número de Lote o Serie</label><input type="text" id="l-numero" required placeholder="LOTE-2026-X"></div>
+        <div class="form-group"><label>Fecha de Caducidad (opcional)</label><input type="date" id="l-caducidad"></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background: #6366f1;">Guardar Lote</button>
+          <button type="button" onclick="cerrarModalLote()" class="btn" style="background: #64748b;">Cancelar</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -273,7 +300,7 @@
   <!-- MODAL AUDITORÍA DE ZONA -->
   <div id="modal-auditoria" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; text-align: center;">
-      <h3 style="margin-bottom: 1rem; color: #d97706;">📋 Auditoría de Inventario por Zona</h3>
+      <h3 style="margin-bottom: 1.0rem; color: #d97706;">📋 Auditoría de Inventario por Zona</h3>
       <div class="form-group"><label>Seleccione Zona a Auditar</label>
         <select id="aud-zona" required><option value="">Seleccione Zona...</option></select>
       </div>
@@ -668,7 +695,7 @@
           var tbody = document.getElementById('tabla-lotes-body');
           tbody.innerHTML = '';
           if (data.lotes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin lotes registrados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin lotes.</td></tr>';
             return;
           }
           data.lotes.forEach(function(l) {
@@ -684,6 +711,30 @@
       });
     }
 
+    function abrirModalLote() {
+      actualizarDesplegablesProductos();
+      document.getElementById('modal-lote').classList.remove('hidden');
+    }
+    function cerrarModalLote() { document.getElementById('modal-lote').classList.add('hidden'); }
+
+    function guardarNuevoLote(e) {
+      e.preventDefault();
+      var datos = {
+        action: 'guardarLote',
+        empresaId: usuarioActual.empresaId,
+        sku: document.getElementById('l-sku').value,
+        numeroSerieLote: document.getElementById('l-numero').value,
+        caducidad: document.getElementById('l-caducidad').value
+      };
+      apiCall(datos, function(data) {
+        if (data.success) {
+          alert("¡Lote registrado con éxito!");
+          cerrarModalLote();
+          cargarLotes(usuarioActual.empresaId);
+        }
+      });
+    }
+
     function cargarAlmacenes(empresaId) {
       apiCall({ action: 'listarAlmacenes', empresaId: empresaId }, function(data) {
         if (data.success) {
@@ -691,7 +742,7 @@
           var tbody = document.getElementById('tabla-almacenes-body');
           tbody.innerHTML = '';
           if (data.almacenes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin almacenes creados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="2" style="padding: 1rem; text-align: center; color: var(--text-muted);">Sin almacenes.</td></tr>';
           } else {
             data.almacenes.forEach(function(a) {
               var tr = document.createElement('tr');
@@ -920,16 +971,19 @@
       var selOrd = document.getElementById('ord-sku');
       var selMov = document.getElementById('m-sku');
       var selTr = document.getElementById('tr-sku');
+      var selLote = document.getElementById('l-sku');
       
       selOrd.innerHTML = '<option value="">Seleccione Producto...</option>';
       selMov.innerHTML = '<option value="">Seleccione Producto...</option>';
       if (selTr) selTr.innerHTML = '<option value="">Seleccione Producto...</option>';
+      if (selLote) selLote.innerHTML = '<option value="">Seleccione Producto...</option>';
       
       todosLosProductos.forEach(function(p) {
         var opt = `<option value="${p.sku}">${p.sku} - ${p.nombre}</option>`;
         selOrd.innerHTML += opt;
         selMov.innerHTML += opt;
         if (selTr) selTr.innerHTML += opt;
+        if (selLote) selLote.innerHTML += opt;
       });
     }
 
