@@ -579,11 +579,11 @@
 
   <script>
 
-   const APP_VERSION = "2.8-FRY";
+   const APP_VERSION = "2.9-FRY";
    if (localStorage.getItem("stockmaster_version") !== APP_VERSION) {
        localStorage.clear();
        localStorage.setItem("stockmaster_version", APP_VERSION);
-       }
+   }
 
     var gasUrl = "https://script.google.com/macros/s/AKfycbzk9jondVulH9TpDLYrVsJovqEMY9zS3xehgie9VeBIv1RMbjYIah-eOaKUpKW1NZJP/exec";
     var html5QrcodeScanner = null;
@@ -1377,6 +1377,7 @@
           <td>${parseFloat(p.precioVenta || 0).toFixed(2)} €</td>
           <td>${estadoBadge}</td>
           <td style="text-align: center; white-space: nowrap;">
+            <button onclick="abrirModalMovimiento('${p.sku}')" style="background: #dbeafe; color: #1d4ed8; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;" title="Registrar entrada o salida">⚡ Mover</button>
             <button onclick="imprimirEtiqueta('${p.sku}')" style="background: #fef08a; color: #854d0e; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;">🏷️ Etiqueta</button>
             <button onclick="editarProducto('${p.id}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;">✏️ Editar</button>
             <button onclick="eliminarProducto('${p.id}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️</button>
