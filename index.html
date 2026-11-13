@@ -160,8 +160,11 @@
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-          <div style="display: flex; gap: 0.5rem; flex: 1; max-width: 500px;">
-            <input type="text" id="buscador-input" placeholder="🔍 Buscar por SKU o Nombre..." oninput="filtrarTabla()" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff;">
+          <div style="display: flex; gap: 0.5rem; flex: 1; max-width: 540px; align-items: center;">
+            <div style="position: relative; flex: 1;">
+              <input type="text" id="buscador-input" placeholder="🔍 Buscar por SKU, Nombre o Zona..." oninput="filtrarTabla()" style="width: 100%; padding: 0.75rem 2.2rem 0.75rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff;">
+              <button type="button" id="btn-limpiar-busqueda" onclick="limpiarBusqueda()" class="hidden" title="Limpiar búsqueda" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #e2e8f0; color: var(--text); border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✖</button>
+            </div>
             <button onclick="iniciarEscanerCamara()" class="btn" style="width: auto; background: #8b5cf6; white-space: nowrap;">📷 Escanear</button>
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -579,7 +582,7 @@
 
   <script>
 
-   const APP_VERSION = "2.9-FRY";
+   const APP_VERSION = "3.0-FRY";
    if (localStorage.getItem("stockmaster_version") !== APP_VERSION) {
        localStorage.clear();
        localStorage.setItem("stockmaster_version", APP_VERSION);
@@ -1341,17 +1344,32 @@
       filtrarTabla();
     }
 
+    function limpiarBusqueda() {
+      var input = document.getElementById('buscador-input');
+      input.value = '';
+      filtrarTabla();
+      input.focus();
+    }
+
     function renderizarTabla(lista) {
       var tbody = document.getElementById('tabla-productos-body');
       tbody.innerHTML = '';
       
-      var textoBusqueda = document.getElementById('buscador-input').value.toLowerCase().trim();
+      var inputBuscador = document.getElementById('buscador-input');
+      var btnLimpiar = document.getElementById('btn-limpiar-busqueda');
+      var textoBusqueda = inputBuscador.value.toLowerCase().trim();
+
+      if (btnLimpiar) {
+        if (textoBusqueda.length > 0) btnLimpiar.classList.remove('hidden');
+        else btnLimpiar.classList.add('hidden');
+      }
+
+      var textoLimpio = textoBusqueda.replace(/^zona:/i, '').trim();
       
       var filtrados = lista.filter(function(p) {
-        var textoLimpio = textoBusqueda.replace(/^zona:/i, '').trim();
         var coincideTexto = p.sku.toLowerCase().includes(textoLimpio) || 
-                          p.nombre.toLowerCase().includes(textoLimpio) || 
-                          (p.ubicacion && p.ubicacion.toLowerCase().includes(textoLimpio));
+                            p.nombre.toLowerCase().includes(textoLimpio) || 
+                            (p.ubicacion && p.ubicacion.toLowerCase().includes(textoLimpio));
         var esBajo = p.stockActual <= p.stockMinimo;
         
         if (filtroEstadoActual === 'OK' && esBajo) return false;
@@ -1664,6 +1682,9 @@
       document.getElementById('scanner-wrapper').classList.remove('hidden');
       html5QrcodeScanner = new Html5Qrcode("reader");
       html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, function(codigo) {
+        if (navigator.vibrate) {
+          navigator.vibrate(100);
+        }
         document.getElementById('buscador-input').value = codigo;
         filtrarTabla();
         detenerEscanerCamara();
@@ -1671,7 +1692,9 @@
     }
 
     function detenerEscanerCamara() {
-      if (html5QrcodeScanner) html5QrcodeScanner.stop();
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().catch(function() {});
+      }
       document.getElementById('scanner-wrapper').classList.add('hidden');
     }
 
