@@ -67,8 +67,8 @@
 
     @media print {
       body * { visibility: hidden; }
-      #etiqueta-impresion, #etiqueta-impresion *, #etiqueta-qr-impresion, #etiqueta-qr-impresion * { visibility: visible; }
-      #etiqueta-impresion, #etiqueta-qr-impresion { position: absolute; left: 0; top: 0; width: 100%; }
+      #etiqueta-impresion, #etiqueta-impresion *, #etiqueta-qr-impresion, #etiqueta-qr-impresion *, #etiqueta-qr-prod-impresion, #etiqueta-qr-prod-impresion * { visibility: visible; }
+      #etiqueta-impresion, #etiqueta-qr-impresion, #etiqueta-qr-prod-impresion { position: absolute; left: 0; top: 0; width: 100%; }
     }
   </style>
 </head>
@@ -379,10 +379,10 @@
     </div>
   </div>
 
-  <!-- MODAL IMPRESIÓN ETIQUETA PRODUCTO -->
+  <!-- MODAL IMPRESIÓN ETIQUETA CÓDIGO DE BARRAS PRODUCTO -->
   <div id="modal-etiqueta" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; text-align: center;">
-      <h3 style="margin-bottom: 1rem; color: var(--primary);">🏷️ Etiqueta de Producto</h3>
+      <h3 style="margin-bottom: 1rem; color: var(--primary);">🏷️ Etiqueta de Producto (Código de Barras)</h3>
       <div id="etiqueta-impresion" style="border: 2px dashed #cbd5e1; padding: 1.5rem; border-radius: 8px; background: #fff; margin-bottom: 1.5rem;">
         <h4 id="lbl-prod-nombre" style="font-size: 1.1rem; color: var(--text);">Nombre Producto</h4>
         <p id="lbl-prod-pvp" style="font-weight: 800; font-size: 1.3rem; color: var(--primary); margin: 0.5rem 0;">0.00 €</p>
@@ -391,6 +391,22 @@
       <div style="display: flex; gap: 1rem;">
         <button onclick="window.print()" class="btn" style="background: var(--success);">🖨️ Imprimir Etiqueta</button>
         <button onclick="cerrarModalEtiqueta()" class="btn" style="background: #64748b;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL IMPRESIÓN QR PRODUCTO -->
+  <div id="modal-etiqueta-qr-producto" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; text-align: center;">
+      <h3 style="margin-bottom: 1rem; color: var(--primary);">📱 Etiqueta QR de Producto</h3>
+      <div id="etiqueta-qr-prod-impresion" style="border: 2px dashed #cbd5e1; padding: 1.5rem; border-radius: 8px; background: #fff; margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center;">
+        <h4 id="lbl-prod-qr-nombre" style="font-size: 1.1rem; color: var(--text); margin-bottom: 0.5rem;">Nombre Producto</h4>
+        <p id="lbl-prod-qr-sku" style="font-family: monospace; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">SKU</p>
+        <div id="qrcode-prod-container" style="display: inline-block;"></div>
+      </div>
+      <div style="display: flex; gap: 1rem;">
+        <button onclick="window.print()" class="btn" style="background: var(--success);">🖨️ Imprimir QR</button>
+        <button onclick="cerrarModalQrProducto()" class="btn" style="background: #64748b;">Cerrar</button>
       </div>
     </div>
   </div>
@@ -582,7 +598,7 @@
 
   <script>
 
-   const APP_VERSION = "3.0-FRY";
+   const APP_VERSION = "3.1-FRY";
    if (localStorage.getItem("stockmaster_version") !== APP_VERSION) {
        localStorage.clear();
        localStorage.setItem("stockmaster_version", APP_VERSION);
@@ -1114,6 +1130,25 @@
 
     function cerrarModalQr() { document.getElementById('modal-etiqueta-qr').classList.add('hidden'); }
 
+    function imprimirQrProducto(sku) {
+      var prod = todosLosProductos.find(function(p) { return p.sku === sku; });
+      if (!prod) return;
+      document.getElementById('lbl-prod-qr-nombre').innerText = prod.nombre;
+      document.getElementById('lbl-prod-qr-sku').innerText = "SKU: " + prod.sku;
+      var container = document.getElementById('qrcode-prod-container');
+      container.innerHTML = "";
+      new QRCode(container, {
+        text: prod.sku,
+        width: 150,
+        height: 150
+      });
+      document.getElementById('modal-etiqueta-qr-producto').classList.remove('hidden');
+    }
+
+    function cerrarModalQrProducto() { 
+      document.getElementById('modal-etiqueta-qr-producto').classList.add('hidden'); 
+    }
+
     function actualizarDesplegableZonas() {
       var selUbi = document.getElementById('p-ubicacion');
       var selAud = document.getElementById('aud-zona');
@@ -1399,7 +1434,8 @@
           <td>${estadoBadge}</td>
           <td style="text-align: center; white-space: nowrap;">
             <button onclick="abrirModalMovimiento('${p.sku}')" style="background: #dbeafe; color: #1d4ed8; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;" title="Registrar entrada o salida">⚡ Mover</button>
-            <button onclick="imprimirEtiqueta('${p.sku}')" style="background: #fef08a; color: #854d0e; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;">🏷️ Etiqueta</button>
+            <button onclick="imprimirQrProducto('${p.sku}')" style="background: #fef08a; color: #854d0e; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; margin-right: 4px;" title="Generar QR de Producto">📱 QR</button>
+            <button onclick="imprimirEtiqueta('${p.sku}')" style="background: #fef08a; color: #854d0e; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;" title="Código de barras">🏷️ Etiqueta</button>
             <button onclick="editarProducto('${p.id}')" style="background: #e0e7ff; color: #4338ca; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px;">✏️ Editar</button>
             <button onclick="eliminarProducto('${p.id}')" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️</button>
           </td>
@@ -1685,6 +1721,19 @@
         if (navigator.vibrate) {
           navigator.vibrate(100);
         }
+        try {
+          var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.12);
+        } catch(err) {}
+
         document.getElementById('buscador-input').value = codigo;
         filtrarTabla();
         detenerEscanerCamara();
@@ -1703,9 +1752,6 @@
       location.reload();
     }
 
-    // =========================================================================
-    // MÓDULO DE IMPORTACIÓN Y EXPORTACIÓN MASIVA CONECTADO A GOOGLE APPS SCRIPT
-    // =========================================================================
     function abrirModalImportExport() {
       document.getElementById('ie-resultado').innerHTML = '';
       document.getElementById('ie-archivo').value = '';
