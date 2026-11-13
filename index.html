@@ -84,8 +84,8 @@
     <div id="error-alert" class="error-msg"></div>
 
     <form id="login-form" onsubmit="ejecutarLogin(event)">
-      <div class="form-group"><label>Correo Electrónico</label><input type="email" id="email" required placeholder="admin@inventario.com"></div>
-      <div class="form-group"><label>Contraseña</label><input type="password" id="password" required placeholder="••••••••"></div>
+      <div class="form-group"><label>Correo Electrónico</label><input type="email" id="email" required></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="password" required></div>
       <button type="submit" class="btn">Iniciar Sesión</button>
     </form>
   </div>
@@ -307,7 +307,7 @@
         <div class="form-group"><label>Producto (SKU)</label>
           <select id="l-sku" required><option value="">Seleccione Producto...</option></select>
         </div>
-        <div class="form-group"><label>Número de Lote o Serie</label><input type="text" id="l-numero" required placeholder="LOTE-2026-X"></div>
+        <div class="form-group"><label>Número de Lote o Serie</label><input type="text" id="l-numero" required></div>
         <div class="form-group"><label>Fecha de Caducidad</label><input type="date" id="l-caducidad" required></div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn" style="background: #6366f1;">Guardar Lote</button>
@@ -332,7 +332,7 @@
             <option value="Defecto de Fábrica">Defecto de Fábrica</option>
           </select>
         </div>
-        <div class="form-group"><label>Motivo / Descripción</label><input type="text" id="g-motivo" required placeholder="Ej: No enciende / Pieza rota"></div>
+        <div class="form-group"><label>Motivo / Descripción</label><input type="text" id="g-motivo" required></div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn" style="background: #e11d48;">Registrar Incidencia</button>
           <button type="button" onclick="cerrarModalGarantia()" class="btn" style="background: #64748b;">Cancelar</button>
@@ -412,9 +412,9 @@
     <div style="background: #fff; width: 100%; max-width: 450px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nueva Empresa</h3>
       <form onsubmit="guardarNuevaEmpresa(event)">
-        <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="e-nombre" required placeholder="Ferretería Central"></div>
-        <div class="form-group"><label>Correo Administrador</label><input type="email" id="e-email" required placeholder="admin@empresa.com"></div>
-        <div class="form-group"><label>Contraseña</label><input type="password" id="e-pass" required placeholder="••••••••"></div>
+        <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="e-nombre" required></div>
+        <div class="form-group"><label>Correo Administrador</label><input type="email" id="e-email" required></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="e-pass" required></div>
         <div class="form-group"><label>Plan SaaS</label>
           <select id="e-plan"><option value="Standard">Standard</option><option value="Enterprise Pro">Enterprise Pro</option><option value="Unlimited">Unlimited</option></select>
         </div>
@@ -431,9 +431,9 @@
       <h3 id="modal-producto-titulo" style="margin-bottom: 1.5rem; color: var(--primary);">+ Registrar Nuevo Producto</h3>
       <form onsubmit="guardarNuevoProducto(event)">
         <input type="hidden" id="p-id">
-        <div class="form-group"><label>SKU / Código</label><input type="text" id="p-sku" required placeholder="PROD-001"></div>
-        <div class="form-group"><label>Nombre</label><input type="text" id="p-nombre" required placeholder="Taladro 18V"></div>
-        <div class="form-group"><label>Categoría</label><input type="text" id="p-categoria" placeholder="Herramientas"></div>
+        <div class="form-group"><label>SKU / Código</label><input type="text" id="p-sku" required></div>
+        <div class="form-group"><label>Nombre</label><input type="text" id="p-nombre" required></div>
+        <div class="form-group"><label>Categoría</label><input type="text" id="p-categoria"></div>
         <div class="form-group"><label>Ubicación / Zona</label>
           <select id="p-ubicacion" required><option value="">Seleccione Zona...</option></select>
         </div>
@@ -458,9 +458,9 @@
       <h3 id="modal-almacen-titulo" style="margin-bottom: 1.5rem; color: var(--warning);">🏢 Nuevo Almacén o Zona</h3>
       <form onsubmit="guardarNuevoAlmacen(event)">
         <input type="hidden" id="alm-id">
-        <div class="form-group"><label>Nombre Almacén / Zona</label><input type="text" id="alm-nombre" required placeholder="Almacén Norte / Zona C"></div>
-        <div class="form-group"><label>Ubicación Física</label><input type="text" id="alm-ubicacion" required placeholder="Polígono Industrial Sur"></div>
-        <div class="form-group"><label>Responsable</label><input type="text" id="alm-resp" required placeholder="Ana López"></div>
+        <div class="form-group"><label>Nombre Almacén / Zona</label><input type="text" id="alm-nombre" required></div>
+        <div class="form-group"><label>Ubicación Física</label><input type="text" id="alm-ubicacion" required></div>
+        <div class="form-group"><label>Responsable</label><input type="text" id="alm-resp" required></div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn" style="background: var(--warning);">Guardar</button>
           <button type="button" onclick="cerrarModalAlmacen()" class="btn" style="background: #64748b;">Cancelar</button>
@@ -474,10 +474,10 @@
       <h3 id="modal-proveedor-titulo" style="margin-bottom: 1.5rem; color: #0891b2;">🚚 Nuevo Proveedor</h3>
       <form onsubmit="guardarNuevoProveedor(event)">
         <input type="hidden" id="prov-id">
-        <div class="form-group"><label>Nombre Empresa Proveedora</label><input type="text" id="prov-nombre" required placeholder="Global Tools S.L."></div>
-        <div class="form-group"><label>Persona de Contacto</label><input type="text" id="prov-contacto" required placeholder="Pedro Sánchez"></div>
-        <div class="form-group"><label>Correo Electrónico</label><input type="email" id="prov-email" required placeholder="ventas@globaltools.com"></div>
-        <div class="form-group"><label>Teléfono</label><input type="text" id="prov-tel" required placeholder="600123456"></div>
+        <div class="form-group"><label>Nombre Empresa Proveedora</label><input type="text" id="prov-nombre" required></div>
+        <div class="form-group"><label>Persona de Contacto</label><input type="text" id="prov-contacto" required></div>
+        <div class="form-group"><label>Correo Electrónico</label><input type="email" id="prov-email" required></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" id="prov-tel" required></div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn" style="background: #0891b2;">Guardar</button>
           <button type="button" onclick="cerrarModalProveedor()" class="btn" style="background: #64748b;">Cancelar</button>
@@ -579,7 +579,7 @@
 
   <script>
 
-   const APP_VERSION = "2.7-FRY";
+   const APP_VERSION = "2.8-FRY";
    if (localStorage.getItem("stockmaster_version") !== APP_VERSION) {
        localStorage.clear();
        localStorage.setItem("stockmaster_version", APP_VERSION);
@@ -601,23 +601,17 @@
     function apiCall(params, callback) {
       var callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
       
-      // Añadimos un temporizador de seguridad por si el móvil bloquea la respuesta JSONP
       var timeoutId = setTimeout(function() {
         if (window[callbackName]) {
           delete window[callbackName];
           if (script && script.parentNode) script.parentNode.removeChild(script);
-          console.warn("⚠️ Fallo de red o bloqueo de JSONP en móvil. Reintentando por fetch directo...");
-          
-          // Respaldo automático mediante fetch directo
           var queryFallback = new URLSearchParams(params);
           fetch(gasUrl + '?' + queryFallback.toString())
             .then(res => res.json())
             .then(data => callback(data))
-            .catch(err => {
-              console.error("Error crítico de conexión con Google Apps Script:", err);
-            });
+            .catch(err => console.error("Error crítico de conexión:", err));
         }
-      }, 8000); // Si en 8 segundos no responde, activa el respaldo
+      }, 8000);
 
       window[callbackName] = function(data) {
         clearTimeout(timeoutId);
@@ -625,7 +619,6 @@
         if (script && script.parentNode) script.parentNode.removeChild(script);
         callback(data);
       };
-
       var query = new URLSearchParams(params);
       query.append('callback', callbackName);
       var script = document.createElement('script');
@@ -635,7 +628,6 @@
         clearTimeout(timeoutId);
         delete window[callbackName];
         if (script && script.parentNode) script.parentNode.removeChild(script);
-        // Si falla la carga del script, intentamos fetch directo inmediato
         var queryFallback = new URLSearchParams(params);
         fetch(gasUrl + '?' + queryFallback.toString())
           .then(res => res.json())
@@ -653,14 +645,12 @@
       var errorAlert = document.getElementById('error-alert');
       errorAlert.style.display = 'none';
 
-      // Usamos fetch POST directo para evitar el bloqueo de scripts de terceros en móviles
-      var urlConAccion = gasUrl + "?action=login&email=" + encodeURIComponent(email) + "&password=" + encodeURIComponent(password);
-
-      // Indicamos al usuario que está conectando
       var btnSubmit = document.querySelector('#login-form button[type="submit"]');
       var textoAnterior = btnSubmit.innerText;
       btnSubmit.innerText = "Verificando...";
       btnSubmit.disabled = true;
+
+      var urlConAccion = gasUrl + "?action=login&email=" + encodeURIComponent(email) + "&password=" + encodeURIComponent(password);
 
       fetch(urlConAccion, {
         method: 'GET',
@@ -682,16 +672,13 @@
           errorAlert.style.display = 'block';
         }
       })
-      .catch(function(error) {
+      .catch(function() {
         btnSubmit.innerText = textoAnterior;
         btnSubmit.disabled = false;
-        // Si el navegador sigue bloqueando por CORS estricto, aplicamos un respaldo automático de emergencia
-        console.warn("Fallo en fetch directo, intentando método alternativo...");
         apiCallLegacyLogin(email, password, errorAlert);
       });
     }
 
-    // Método de respaldo por etiqueta script si la red o CORS del móvil es muy restrictiva
     function apiCallLegacyLogin(email, password, errorAlert) {
       apiCall({ action: 'login', email: email, password: password }, function(data) {
         if (data.success) {
@@ -1916,24 +1903,6 @@
       a.click();
       URL.revokeObjectURL(url);
     }
-
-     // Protección automática contra sesiones corruptas en modo normal
-(function limpiarSesionCorrupta() {
-  try {
-    var sesion = localStorage.getItem('stockmaster_user');
-    if (sesion) {
-      var usuario = JSON.parse(sesion);
-      // Si el objeto de sesión está incompleto o corrupto, lo purgará automáticamente
-      if (!usuario || !usuario.empresaId || !usuario.rol) {
-        localStorage.removeItem('stockmaster_user');
-      }
-    }
-  } catch (e) {
-    // Si el navegador bloquea el localStorage en modo normal, avisa en consola
-    console.warn("El almacenamiento local está restringido por el navegador.");
-    localStorage.clear();
-  }
-})();
 
     window.onload = function() {
       var saved = localStorage.getItem('stockmaster_user');
