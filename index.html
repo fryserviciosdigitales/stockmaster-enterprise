@@ -1348,7 +1348,10 @@
       var textoBusqueda = document.getElementById('buscador-input').value.toLowerCase().trim();
       
       var filtrados = lista.filter(function(p) {
-        var coincideTexto = p.sku.toLowerCase().includes(textoBusqueda) || p.nombre.toLowerCase().includes(textoBusqueda);
+        var textoLimpio = textoBusqueda.replace(/^zona:/i, '').trim();
+        var coincideTexto = p.sku.toLowerCase().includes(textoLimpio) || 
+                          p.nombre.toLowerCase().includes(textoLimpio) || 
+                          (p.ubicacion && p.ubicacion.toLowerCase().includes(textoLimpio));
         var esBajo = p.stockActual <= p.stockMinimo;
         
         if (filtroEstadoActual === 'OK' && esBajo) return false;
