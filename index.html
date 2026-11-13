@@ -600,15 +600,49 @@
 
     function apiCall(params, callback) {
       var callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+      
+      // Añadimos un temporizador de seguridad por si el móvil bloquea la respuesta JSONP
+      var timeoutId = setTimeout(function() {
+        if (window[callbackName]) {
+          delete window[callbackName];
+          if (script && script.parentNode) script.parentNode.removeChild(script);
+          console.warn("⚠️ Fallo de red o bloqueo de JSONP en móvil. Reintentando por fetch directo...");
+          
+          // Respaldo automático mediante fetch directo
+          var queryFallback = new URLSearchParams(params);
+          fetch(gasUrl + '?' + queryFallback.toString())
+            .then(res => res.json())
+            .then(data => callback(data))
+            .catch(err => {
+              console.error("Error crítico de conexión con Google Apps Script:", err);
+            });
+        }
+      }, 8000); // Si en 8 segundos no responde, activa el respaldo
+
       window[callbackName] = function(data) {
+        clearTimeout(timeoutId);
         delete window[callbackName];
-        document.body.removeChild(script);
+        if (script && script.parentNode) script.parentNode.removeChild(script);
         callback(data);
       };
+
       var query = new URLSearchParams(params);
       query.append('callback', callbackName);
       var script = document.createElement('script');
       script.src = gasUrl + '?' + query.toString();
+      
+      script.onerror = function() {
+        clearTimeout(timeoutId);
+        delete window[callbackName];
+        if (script && script.parentNode) script.parentNode.removeChild(script);
+        // Si falla la carga del script, intentamos fetch directo inmediato
+        var queryFallback = new URLSearchParams(params);
+        fetch(gasUrl + '?' + queryFallback.toString())
+          .then(res => res.json())
+          .then(data => callback(data))
+          .catch(err => console.error("Error en fallback de red:", err));
+      };
+
       document.body.appendChild(script);
     }
 
