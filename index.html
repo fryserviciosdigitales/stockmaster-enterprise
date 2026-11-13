@@ -619,6 +619,46 @@
       var errorAlert = document.getElementById('error-alert');
       errorAlert.style.display = 'none';
 
+      // Usamos fetch POST directo para evitar el bloqueo de scripts de terceros en móviles
+      var urlConAccion = gasUrl + "?action=login&email=" + encodeURIComponent(email) + "&password=" + encodeURIComponent(password);
+
+      // Indicamos al usuario que está conectando
+      var btnSubmit = document.querySelector('#login-form button[type="submit"]');
+      var textoAnterior = btnSubmit.innerText;
+      btnSubmit.innerText = "Verificando...";
+      btnSubmit.disabled = true;
+
+      fetch(urlConAccion, {
+        method: 'GET',
+        redirect: 'follow'
+      })
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(data) {
+        btnSubmit.innerText = textoAnterior;
+        btnSubmit.disabled = false;
+        
+        if (data.success) {
+          usuarioActual = data.usuario;
+          localStorage.setItem('stockmaster_user', JSON.stringify(usuarioActual));
+          mostrarDashboard(usuarioActual);
+        } else {
+          errorAlert.innerText = data.message || "Credenciales incorrectas";
+          errorAlert.style.display = 'block';
+        }
+      })
+      .catch(function(error) {
+        btnSubmit.innerText = textoAnterior;
+        btnSubmit.disabled = false;
+        // Si el navegador sigue bloqueando por CORS estricto, aplicamos un respaldo automático de emergencia
+        console.warn("Fallo en fetch directo, intentando método alternativo...");
+        apiCallLegacyLogin(email, password, errorAlert);
+      });
+    }
+
+    // Método de respaldo por etiqueta script si la red o CORS del móvil es muy restrictiva
+    function apiCallLegacyLogin(email, password, errorAlert) {
       apiCall({ action: 'login', email: email, password: password }, function(data) {
         if (data.success) {
           usuarioActual = data.usuario;
