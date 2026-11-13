@@ -13,6 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -168,6 +169,7 @@
             <button onclick="iniciarEscanerCamara()" class="btn" style="width: auto; background: #8b5cf6; white-space: nowrap;">📷 Escanear</button>
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button onclick="abrirModalImportExport()" class="btn" style="width: auto; background: #0f172a; border: 1px solid #334155;">📥/📤 Importar / Exportar</button>
             <button onclick="exportarPDF()" class="btn" style="width: auto; background: #475569;">📄 PDF</button>
             <button onclick="exportarCSV()" class="btn" style="width: auto; background: #0284c7;">📊 CSV</button>
             <button onclick="abrirModalAuditoria()" class="btn" style="width: auto; background: #d97706;">📋 Auditar</button>
@@ -454,8 +456,7 @@
       </form>
     </div>
   </div>
-
-  <div id="modal-almacen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+<div id="modal-almacen" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
     <div style="background: #fff; width: 100%; max-width: 400px; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
       <h3 id="modal-almacen-titulo" style="margin-bottom: 1.5rem; color: var(--warning);">🏢 Nuevo Almacén o Zona</h3>
       <form onsubmit="guardarNuevoAlmacen(event)">
@@ -529,6 +530,53 @@
           <button type="button" onclick="cerrarModalMovimiento()" class="btn" style="background: #64748b;">Cancelar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL IMPORTACIÓN Y EXPORTACIÓN MASIVA -->
+  <div id="modal-import-export" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 620px; padding: 2rem; border-radius: 10px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <h3 style="color: var(--primary); font-size: 1.2rem;">📥/📤 Centro de Migración y Datos Masivos</h3>
+        <button type="button" onclick="cerrarModalImportExport()" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">✖</button>
+      </div>
+
+      <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1.5rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--text);">1. Importar Datos desde Excel (.xlsx), CSV o JSON</h4>
+        
+        <div class="form-group">
+          <label>¿Qué entidad deseas importar?</label>
+          <select id="ie-entidad">
+            <option value="productos">📦 Productos / Catálogo Completo</option>
+            <option value="almacenes">🏢 Almacenes y Zonas</option>
+            <option value="proveedores">🚚 Proveedores</option>
+            <option value="lotes">🏷️ Lotes y Caducidades</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">¿No tienes el formato?</span>
+          <button type="button" onclick="descargarPlantillaModelo()" style="background: #e2e8f0; color: var(--text); border: none; padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">⬇️ Descargar Plantilla Excel Modelo</button>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.75rem;">
+          <label>Seleccionar archivo (.xlsx, .xls, .csv, .json)</label>
+          <input type="file" id="ie-archivo" accept=".xlsx, .xls, .csv, .json" style="padding: 0.5rem; background: #fff;">
+        </div>
+
+        <button type="button" id="btn-procesar-ie" onclick="procesarImportacionMasiva()" class="btn" style="background: var(--success);">⚡ Procesar e Importar Automáticamente</button>
+        <div id="ie-resultado" style="margin-top: 0.75rem; font-size: 0.85rem; font-weight: 600;"></div>
+      </div>
+
+      <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border);">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--text);">2. Exportar Copia de Seguridad o Tablas</h4>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Descarga todos los registros actuales de la empresa en formato Excel multihola o JSON estructurado.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <button type="button" onclick="exportarTodoExcel()" class="btn" style="background: #0284c7; font-size: 0.9rem;">📊 Exportar Excel Completo (.xlsx)</button>
+          <button type="button" onclick="exportarTodoJSON()" class="btn" style="background: #475569; font-size: 0.9rem;">🗄️ Backup JSON Completo</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1568,6 +1616,234 @@
     function cerrarSesion() {
       localStorage.removeItem('stockmaster_user');
       location.reload();
+    }
+
+    // =========================================================================
+    // MÓDULO DE IMPORTACIÓN Y EXPORTACIÓN MASIVA CONECTADO A GOOGLE APPS SCRIPT
+    // =========================================================================
+    function abrirModalImportExport() {
+      document.getElementById('ie-resultado').innerHTML = '';
+      document.getElementById('ie-archivo').value = '';
+      document.getElementById('modal-import-export').classList.remove('hidden');
+    }
+
+    function cerrarModalImportExport() {
+      document.getElementById('modal-import-export').classList.add('hidden');
+    }
+
+    function descargarPlantillaModelo() {
+      var entidad = document.getElementById('ie-entidad').value;
+      var datosModelo = [];
+      var nombreArchivo = 'plantilla_' + entidad + '_StockMaster.xlsx';
+
+      if (entidad === 'productos') {
+        datosModelo = [
+          { SKU: "PROD-101", Nombre: "Taladro Percutor 18V", Categoria: "Herramientas", Ubicacion: "Zona B - Almacén Central", StockActual: 15, StockMinimo: 5, PrecioCoste: 65.50, PrecioVenta: 119.90 },
+          { SKU: "PROD-102", Nombre: "Caja Tornillos 4x40", Categoria: "Ferretería", Ubicacion: "Estantería 1", StockActual: 120, StockMinimo: 20, PrecioCoste: 3.20, PrecioVenta: 7.50 }
+        ];
+      } else if (entidad === 'almacenes') {
+        datosModelo = [
+          { NombreAlmacen: "Almacén Norte", UbicacionFisica: "Polígono Industrial Nave 4", Responsable: "Carlos Ruiz" },
+          { NombreAlmacen: "Pasillo C - Estantería 3", UbicacionFisica: "Nave Principal", Responsable: "Ana López" }
+        ];
+      } else if (entidad === 'proveedores') {
+        datosModelo = [
+          { NombreProveedor: "Suministros Industriales S.A.", Contacto: "Luis Gómez", Email: "pedidos@suministros.com", Telefono: "600123456" }
+        ];
+      } else if (entidad === 'lotes') {
+        datosModelo = [
+          { SKU: "PROD-101", NumeroSerieLote: "LOTE-2026-001", Caducidad: "2027-12-31" }
+        ];
+      }
+
+      var ws = XLSX.utils.json_to_sheet(datosModelo);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, entidad.toUpperCase());
+      XLSX.writeFile(wb, nombreArchivo);
+    }
+
+    function procesarImportacionMasiva() {
+      var input = document.getElementById('ie-archivo');
+      var entidad = document.getElementById('ie-entidad').value;
+      var resultadoDiv = document.getElementById('ie-resultado');
+      var btn = document.getElementById('btn-procesar-ie');
+
+      if (!input.files || input.files.length === 0) {
+        resultadoDiv.style.color = 'var(--danger)';
+        resultadoDiv.innerText = '⚠️ Por favor, selecciona un archivo primero.';
+        return;
+      }
+
+      var file = input.files[0];
+      var extension = file.name.split('.').pop().toLowerCase();
+      var reader = new FileReader();
+
+      reader.onload = function(e) {
+        try {
+          var registros = [];
+          if (extension === 'json') {
+            var parsed = JSON.parse(e.target.result);
+            registros = Array.isArray(parsed) ? parsed : (parsed[entidad] || []);
+          } else {
+            var data = new Uint8Array(e.target.result);
+            var workbook = XLSX.read(data, { type: 'array' });
+            var primeraHoja = workbook.SheetNames[0];
+            registros = XLSX.utils.sheet_to_json(workbook.Sheets[primeraHoja], { defval: '' });
+          }
+
+          if (!registros || registros.length === 0) {
+            throw new Error('El archivo está vacío o no tiene columnas válidas.');
+          }
+
+          btn.disabled = true;
+          btn.innerText = '⏳ Importando en servidor...';
+          resultadoDiv.style.color = 'var(--primary)';
+          resultadoDiv.innerText = 'Procesando ' + registros.length + ' registros...';
+
+          enviarRegistrosAGoogleSheets(entidad, registros, 0, 0, function(importadosOk) {
+            btn.disabled = false;
+            btn.innerText = '⚡ Procesar e Importar Automáticamente';
+            resultadoDiv.style.color = 'var(--success)';
+            resultadoDiv.innerText = '✅ ¡Importación completada! Se han guardado ' + importadosOk + ' de ' + registros.length + ' registros en ' + entidad.toUpperCase() + '.';
+
+            if (entidad === 'productos') {
+              cargarTablaProductos(usuarioActual.empresaId);
+              cargarDatosDashboard(usuarioActual.empresaId);
+            } else if (entidad === 'almacenes') {
+              cargarAlmacenes(usuarioActual.empresaId);
+            } else if (entidad === 'proveedores') {
+              cargarProveedores(usuarioActual.empresaId);
+            } else if (entidad === 'lotes') {
+              cargarLotes(usuarioActual.empresaId);
+            }
+          });
+
+        } catch (err) {
+          btn.disabled = false;
+          btn.innerText = '⚡ Procesar e Importar Automáticamente';
+          resultadoDiv.style.color = 'var(--danger)';
+          resultadoDiv.innerText = '❌ Error al leer el archivo: ' + err.message;
+        }
+      };
+
+      if (extension === 'json') reader.readAsText(file);
+      else reader.readAsArrayBuffer(file);
+    }
+
+    function enviarRegistrosAGoogleSheets(entidad, filas, indice, exitos, onFinish) {
+      if (indice >= filas.length) {
+        onFinish(exitos);
+        return;
+      }
+
+      var fila = filas[indice];
+      var params = null;
+
+      if (entidad === 'productos') {
+        var nombreProd = String(fila.Nombre || fila.nombre || fila.Producto || '').trim();
+        if (nombreProd) {
+          params = {
+            action: 'guardarProducto',
+            productoId: '',
+            empresaId: usuarioActual.empresaId,
+            sku: String(fila.SKU || fila.sku || fila.Codigo || ('SKU-' + Date.now() + '-' + indice)).trim(),
+            nombre: nombreProd,
+            categoria: String(fila.Categoria || fila.categoria || 'General').trim(),
+            ubicacion: String(fila.Ubicacion || fila.ubicacion || fila.Zona || 'Zona B - Almacén Central').trim(),
+            stockActual: parseInt(fila.StockActual || fila.Stock || fila.stock || 0, 10),
+            stockMinimo: parseInt(fila.StockMinimo || fila.minimo || 5, 10),
+            precioCoste: parseFloat(fila.PrecioCoste || fila.coste || 0),
+            precioVenta: parseFloat(fila.PrecioVenta || fila.PVP || fila.venta || 0)
+          };
+        }
+      } else if (entidad === 'almacenes') {
+        var nomAlm = String(fila.NombreAlmacen || fila.Nombre || fila.nombre || fila.Zona || '').trim();
+        if (nomAlm) {
+          params = {
+            action: 'guardarAlmacen',
+            almacenId: '',
+            empresaId: usuarioActual.empresaId,
+            nombreAlmacen: nomAlm,
+            ubicacionFisica: String(fila.UbicacionFisica || fila.Ubicacion || 'Instalaciones Empresa').trim(),
+            responsable: String(fila.Responsable || usuarioActual.nombre).trim()
+          };
+        }
+      } else if (entidad === 'proveedores') {
+        var nomProv = String(fila.NombreProveedor || fila.Nombre || fila.nombre || '').trim();
+        if (nomProv) {
+          params = {
+            action: 'guardarProveedor',
+            proveedorId: '',
+            empresaId: usuarioActual.empresaId,
+            nombreProveedor: nomProv,
+            contacto: String(fila.Contacto || 'Departamento Comercial').trim(),
+            email: String(fila.Email || 'sin-email@proveedor.com').trim(),
+            telefono: String(fila.Telefono || '000000000').trim()
+          };
+        }
+      } else if (entidad === 'lotes') {
+        var skuL = String(fila.SKU || fila.sku || '').trim();
+        var numL = String(fila.NumeroSerieLote || fila.NumeroLote || fila.Lote || '').trim();
+        if (skuL && numL) {
+          params = {
+            action: 'guardarLote',
+            serieId: '',
+            empresaId: usuarioActual.empresaId,
+            sku: skuL,
+            numeroSerieLote: numL,
+            caducidad: String(fila.Caducidad || fila.FechaCaducidad || '').trim()
+          };
+        }
+      }
+
+      if (!params) {
+        enviarRegistrosAGoogleSheets(entidad, filas, indice + 1, exitos, onFinish);
+        return;
+      }
+
+      apiCall(params, function(res) {
+        var nuevoConteo = (res && res.success) ? exitos + 1 : exitos;
+        document.getElementById('ie-resultado').innerText = 'Guardando registro ' + (indice + 1) + ' de ' + filas.length + '...';
+        enviarRegistrosAGoogleSheets(entidad, filas, indice + 1, nuevoConteo, onFinish);
+      });
+    }
+
+    function exportarTodoExcel() {
+      var wb = XLSX.utils.book_new();
+      
+      var wsProd = XLSX.utils.json_to_sheet(todosLosProductos.length ? todosLosProductos : [{ Info: 'Sin productos' }]);
+      XLSX.utils.book_append_sheet(wb, wsProd, 'PRODUCTOS');
+
+      var wsAlm = XLSX.utils.json_to_sheet(todosLosAlmacenes.length ? todosLosAlmacenes : [{ Info: 'Sin almacenes' }]);
+      XLSX.utils.book_append_sheet(wb, wsAlm, 'ALMACENES');
+
+      var wsProv = XLSX.utils.json_to_sheet(todosLosProveedores.length ? todosLosProveedores : [{ Info: 'Sin proveedores' }]);
+      XLSX.utils.book_append_sheet(wb, wsProv, 'PROVEEDORES');
+
+      var wsLotes = XLSX.utils.json_to_sheet(todosLosLotes.length ? todosLosLotes : [{ Info: 'Sin lotes' }]);
+      XLSX.utils.book_append_sheet(wb, wsLotes, 'LOTES');
+
+      var fecha = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, 'Backup_StockMaster_' + fecha + '.xlsx');
+    }
+
+    function exportarTodoJSON() {
+      var backup = {
+        fechaExportacion: new Date().toISOString(),
+        empresa: usuarioActual ? usuarioActual.nombre : 'StockMaster',
+        proveedor: 'FRY SERVICIOS DIGITALES - StockMaster Enterprise',
+        productos: todosLosProductos,
+        almacenes: todosLosAlmacenes,
+        proveedores: todosLosProveedores,
+        lotes: todosLosLotes
+      };
+      var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'Backup_StockMaster_' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     window.onload = function() {
