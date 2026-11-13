@@ -1843,6 +1843,24 @@
       URL.revokeObjectURL(url);
     }
 
+     // Protección automática contra sesiones corruptas en modo normal
+(function limpiarSesionCorrupta() {
+  try {
+    var sesion = localStorage.getItem('stockmaster_user');
+    if (sesion) {
+      var usuario = JSON.parse(sesion);
+      // Si el objeto de sesión está incompleto o corrupto, lo purgará automáticamente
+      if (!usuario || !usuario.empresaId || !usuario.rol) {
+        localStorage.removeItem('stockmaster_user');
+      }
+    }
+  } catch (e) {
+    // Si el navegador bloquea el localStorage en modo normal, avisa en consola
+    console.warn("El almacenamiento local está restringido por el navegador.");
+    localStorage.clear();
+  }
+})();
+
     window.onload = function() {
       var saved = localStorage.getItem('stockmaster_user');
       if (saved) {
